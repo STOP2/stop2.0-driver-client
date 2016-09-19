@@ -6,6 +6,8 @@ services:
  - docker
 
 before_install:
+ - sudo apt-get update -q
+ - sudo apt-get install -y mosquitto-clients
  - docker build -t mosquitto back
  - docker run -d -p 1883:1883 -p 9001:9001 mosquitto
 
