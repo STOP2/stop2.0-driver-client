@@ -7,4 +7,4 @@ client.on("message", function (topic, payload) {
   client.end()
 })
 
-client.publish("mqtt/demo", "hello world!")
+//client.publish("mqtt/demo", "hello world!")
