@@ -1,4 +1,4 @@
-var client = mqtt.connect("ws://test.mosca.io") // you add a ws:// url here
+var client = mqtt.connect("wss://test.mosca.io") // you add a ws:// url here
 
 client.subscribe("mqtt/demo")
 
