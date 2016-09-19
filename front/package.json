@@ -1,0 +1,19 @@
+{
+  "name": "stop2.0-driver-client",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/STOP2/stop2.0-driver-client.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/STOP2/stop2.0-driver-client/issues"
+  },
+  "homepage": "https://github.com/STOP2/stop2.0-driver-client#readme"
+}
