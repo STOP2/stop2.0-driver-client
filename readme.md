@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/STOP2/stop2.0-driver-client.svg?branch=master)](https://travis-ci.org/STOP2/stop2.0-driver-client)
+
 # Kuljettajasoftaproto
 
 - `back`-kansio - Docker-köntti joka toimittaa dataa frontille
