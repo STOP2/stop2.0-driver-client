@@ -1,8 +1,12 @@
 // MQTT
 
-var client = mqtt.connect("wss://192.168.99.100:9001") // you add a ws:// url here
+var client = mqtt.connect("ws://192.168.99.100:9001");
 
-client.subscribe("data")
+client.on('connect', function () {
+  console.log("Connected");
+  client.subscribe('presence');
+  client.publish('presence', 'Hello mqtt');
+})
 
 client.on("message", function (topic, payload) {
   console.log([topic, payload].join(": "))
