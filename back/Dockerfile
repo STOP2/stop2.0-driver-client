@@ -3,7 +3,7 @@ FROM	alpine:latest
 RUN	apk update && \
 	apk add mosquitto mosquitto-clients
 
-COPY	back/mosquitto.conf /etc/mosquitto/mosquitto.conf
+COPY	./back/mosquitto.conf /etc/mosquitto/mosquitto.conf
 	
 USER	mosquitto
 
