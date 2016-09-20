@@ -10,6 +10,11 @@
 - `browserMqtt.js` - Webpackilla selainkäyttöön paketoitu node-moduuli MQTT.js
 - `index.js` - Varsinainen koodi
 
+### Käyttöohje
+- Asenna `npm`
+- `npm install http-server -g`
+- `http-server`
+- Mene IP:hen `http://127.0.0.1:8080/`
 
 ## back
 
