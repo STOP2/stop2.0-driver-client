@@ -1,5 +1,4 @@
 sudo: required
-#dist: trusty
 
 language: javascript
 
@@ -7,11 +6,9 @@ services:
  - docker
 
 before_install:
-# - sudo apt-get update -q
-# - sudo apt-get install -y mosquitto-clients
- - docker build -t mosquitto back
- - docker run -d -p 1883:1883 -p 9001:9001 mosquitto
+ - docker build -t mosquitto -f back/Dockerfile .
+# - docker run -d -p 1883:1883 -p 9001:9001 mosquitto
 
 script: 
-# - tests/integration.sh 
- - true
+ - docker build -t mosquitto -f back/Dockerfile . 
+#- true
