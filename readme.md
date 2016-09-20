@@ -22,7 +22,14 @@ Docker-kontti, jossa on mosquitto, joka kuuntelee porteilla 1883 (MQTT) ja 9001 
 
 Käyttö:
 
+Projektihakemistossa:
+
 ```
-docker build -t mosquitto .
+docker build -t mosquitto -f back/Dockerfile .
 docker run -p 1883:1883 -p 9001:9001 mosquitto
+```
+
+Testit voi ajaa lokaalisti (Dockerin sisällä) projektihakemistossa komennolla: 
+```
+docker run -t -v `pwd`:/build mosquitto /build/tests/integration.sh
 ```
