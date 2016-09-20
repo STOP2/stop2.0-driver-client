@@ -4,7 +4,7 @@ var api = "http://test"
 var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 
 mqttClient.on('connect', function () {
-  mqttClient.subscribe('stoprequests');
+  mqttClient.subscribe('stoprequests/1234');
   //mqttClient.publish('stoprequests', '{ "stop_id": "HSL-5125", "request_type": "stop" }');
 })
 
@@ -32,10 +32,12 @@ function addStop(payload) {
         var index = stops.indexOf(s);
         if (index > -1) {
           s.count--;
-          if (s.count < 1) {
+          if (s.count < 1) { // pois näkymästä kokonaan
             stops.splice(index, 1);
             var el = document.querySelector(".stop-"+s.stop_id);
             stopList.removeChild(el);
+          } else { // lukumäärää pienemmäksi
+              s.node.innerHTML = "ID: " + s.stop_id + ", lkm: " + s.count;
           }
           return;
         }
