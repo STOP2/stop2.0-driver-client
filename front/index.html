@@ -2,9 +2,17 @@
 <html>
   <head>
     <title>Kuljettajaproto</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
+    <style>
+      #mapid { height: 180px; }
+    </style>
   </head>
   <body>
     <h1>Tämä on kuljettajaproto</h1>
+
+    <h2>Pysäkit, joilla tulee pysähtyä</h2>
+
+    <button>Pysäkillä ei ketään</button>
 
     <script src="./browserMqtt.js"></script>
     <script src="./main.js"></script>
