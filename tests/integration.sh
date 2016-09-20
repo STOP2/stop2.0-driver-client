@@ -1,6 +1,8 @@
 #!/bin/sh -
 
 mosquitto -c /etc/mosquitto/mosquitto.conf &
+
+sleep 1
 netstat -l | egrep '(1883|9001)'
 MSG="Hello, world!"
 sleep 3 && /usr/bin/mosquitto_pub -t testchannel -m "$MSG" &
