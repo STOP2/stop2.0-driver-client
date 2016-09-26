@@ -6,7 +6,7 @@ var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 getStops();
 
 mqttClient.on('connect', function () {
-  mqttClient.subscribe('stoprequests');
+  mqttClient.subscribe('stoprequests/1234');
   //mqttClient.publish('stoprequests', '{ "stop_id": "HSL-5125", "request_type": "stop" }');
 })
 
@@ -36,7 +36,6 @@ function getStops() {
           var s = xmlHttp.responseText.toString();
           if (s !== undefined) {
             stopLoadedData = JSON.parse(s);
-            console.log(stopLoadedData);
             for (var d of stopLoadedData.data.pattern.stops) {
               var item = document.createElement("li");
               item.classList.add("stop-" + d.name.replace(/\s/g, ''));
@@ -61,6 +60,7 @@ function getStops() {
     pattern(id:"HSL:1050:1:01") {
         name
         stops{
+          gtfsId
           name
         }
       }
@@ -69,7 +69,7 @@ function getStops() {
 
 function addStop(payload) {
   for (var s of stops) {
-    if (s.name == payload.stop_id) {
+    if (s.gtfsId == payload.stop_id) {
       // Perutaan pysähdys
       if (payload.request_type=="cancel") {
         s.count--;
