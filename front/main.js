@@ -47,7 +47,7 @@ function getStops() {
               } else {
                 color = "red";
               }
-              item.innerHTML = d.name + " | STOPS: <span style='font-weight: bold; color: " + color + ";'>" + d.count + "</span>";
+              item.innerHTML = d.name + " | <span style='font-weight: bold; color: " + color + ";'>" + d.count + "</span>";
               stopList.appendChild(item);
               d.node = item;
               d.count = 1;
@@ -83,7 +83,7 @@ function addStop(payload) {
       } else {
         color = "red";
       }
-      s.node.innerHTML = s.name + " | STOPS: <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span>";
+      s.node.innerHTML = s.name + " | <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span>";
       return;
     }
   }
