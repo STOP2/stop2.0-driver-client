@@ -32,20 +32,31 @@ function getStops() {
   var xmlHttp = new XMLHttpRequest();
   xmlHttp.onreadystatechange = function() {
       if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-          console.log(xmlHttp.responseText);
           // Luo nodet
-          for (var d of stopLoadedData) {
-            var item = document.createElement("li");
-            item.classList.add("stop-" + d.stop_id);
-            d.count = 0;
-            item.innerHTML = d.stop_id + " | STOPS: " + d.count;
-            stopList.appendChild(item);
-            d.node = item;
-            d.count = 1;
-            stops.push(d);
+          var s = xmlHttp.responseText.toString();
+          if (s !== undefined) {
+            stopLoadedData = JSON.parse(s);
+            console.log(stopLoadedData);
+            for (var d of stopLoadedData.data.pattern.stops) {
+              var item = document.createElement("li");
+              item.classList.add("stop-" + d.name.replace(/\s/g, ''));
+              d.count = 0;
+              var color;
+              if (d.count === 0) {
+                color = "blue";
+              } else {
+                color = "red";
+              }
+              item.innerHTML = d.name + " | STOPS: <span style='font-weight: bold; color: " + color + ";'>" + d.count + "</span>";
+              stopList.appendChild(item);
+              d.node = item;
+              d.count = 1;
+              stops.push(d);
+            }
           }
   }
   xmlHttp.open("POST", "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql", true);
+  xmlHttp.setRequestHeader("Content-type", "application/graphql");
   xmlHttp.send(`{
     pattern(id:"HSL:1050:1:01") {
         name
@@ -58,7 +69,7 @@ function getStops() {
 
 function addStop(payload) {
   for (var s of stops) {
-    if (s.stop_id == payload.stop_id) {
+    if (s.name == payload.stop_id) {
       // Perutaan pysähdys
       if (payload.request_type=="cancel") {
         s.count--;
@@ -66,7 +77,13 @@ function addStop(payload) {
       } else if (payload.request_Type=="stop") {
         s.count++;
       }
-      s.node.innerHTML = s.stop_id + " | STOPS: " + s.count;
+      var color;
+      if (s.count === 0) {
+        color = "blue";
+      } else {
+        color = "red";
+      }
+      s.node.innerHTML = s.name + " | STOPS: <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span>";
       return;
     }
   }
