@@ -17,7 +17,10 @@
   },
   "homepage": "https://github.com/STOP2/stop2.0-driver-client#readme",
   "devDependencies": {
-    "http-server": "^0.9.0"
+    "chai": "^3.5.0",
+    "http-server": "^0.9.0",
+    "mocha": "^3.0.2",
+    "mocha-phantomjs": "^4.1.0"
   },
   "dependencies": {
     "mqtt": "^2.0.0"
