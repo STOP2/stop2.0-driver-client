@@ -3,8 +3,10 @@
 var api = "http://test"
 var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 
+getStops();
+
 mqttClient.on('connect', function () {
-  mqttClient.subscribe('stoprequests/1234');
+  mqttClient.subscribe('stoprequests');
   //mqttClient.publish('stoprequests', '{ "stop_id": "HSL-5125", "request_type": "stop" }');
 })
 
@@ -23,43 +25,50 @@ driverButton.addEventListener("click", function() {
 
 var stopList = document.querySelector(".stop-list");
 var stops = [];
+var stopLoadedData = [];
 
-function addStop(payload) {
-  // Jos stoppi halutaan poistaa
-  if (payload.request_type=="cancel") {
-    for (var s of stops) {
-      if (s.stop_id == payload.stop_id) {
-        var index = stops.indexOf(s);
-        if (index > -1) {
-          s.count--;
-          if (s.count < 1) { // pois näkymästä kokonaan
-            stops.splice(index, 1);
-            var el = document.querySelector(".stop-"+s.stop_id);
-            stopList.removeChild(el);
-          } else { // lukumäärää pienemmäksi
-              s.node.innerHTML = "ID: " + s.stop_id + ", lkm: " + s.count;
+function getStops() {
+  // Hae stopit
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.onreadystatechange = function() {
+      if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+          console.log(xmlHttp.responseText);
+          // Luo nodet
+          for (var d of stopLoadedData) {
+            var item = document.createElement("li");
+            item.classList.add("stop-" + d.stop_id);
+            d.count = 0;
+            item.innerHTML = d.stop_id + " | STOPS: " + d.count;
+            stopList.appendChild(item);
+            d.node = item;
+            d.count = 1;
+            stops.push(d);
           }
-          return;
+  }
+  xmlHttp.open("POST", "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql", true);
+  xmlHttp.send(`{
+    pattern(id:"HSL:1050:1:01") {
+        name
+        stops{
+          name
         }
       }
-    }
-  }
-  // Muutoin lisää
-  if (payload.request_type=="stop") {
-    for (var s of stops) {
-      if (s.stop_id == payload.stop_id) {
+    }`);
+}
+
+function addStop(payload) {
+  for (var s of stops) {
+    if (s.stop_id == payload.stop_id) {
+      // Perutaan pysähdys
+      if (payload.request_type=="cancel") {
+        s.count--;
+      // Lisätään pysähdys
+      } else if (payload.request_Type=="stop") {
         s.count++;
-        s.node.innerHTML = "ID: " + s.stop_id + ", lkm: " + s.count;
-        return;
       }
+      s.node.innerHTML = s.stop_id + " | STOPS: " + s.count;
+      return;
     }
-    var item = document.createElement("li");
-    item.classList.add("stop-"+payload.stop_id);
-    item.innerHTML = "ID: " + payload.stop_id + ", lkm: 1";
-    stopList.appendChild(item);
-    payload.count = 1;
-    payload.node = item;
-    stops.push(payload);
   }
 }
 
