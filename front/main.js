@@ -85,6 +85,7 @@ function addStop(payload) {
     if (s.gtfsId == payload.stop_id) {
       // Perutaan pysähdys
       if (payload.request_type=="cancel") {
+        if (s.count == 0) return;
         s.count--;
       // Lisätään pysähdys
       } else if (payload.request_type=="stop") {
