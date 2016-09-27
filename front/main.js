@@ -1,39 +1,52 @@
-// MQTT
-
 var api = "http://test"
 var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 
-getStops();
+var currentRoute = "";
 
-mqttClient.on('connect', function () {
-  mqttClient.subscribe('stoprequests/1234');
-  //mqttClient.publish('stoprequests', '{ "stop_id": "HSL-5125", "request_type": "stop" }');
-})
+var currentStop;
+var driverButton;
+var stopList;
+
+var stops = [];
+var stopLoadedData = [];
+
+function init() {
+  currentRoute = document.querySelector("#route-name").value;
+  createUI();
+  getStops();
+}
+
+function createUI() {
+  document.querySelector(".content").innerHTML = `
+        <h2>Pysäkit</h2>
+
+        <ul class="stop-list"></ul>
+
+        <br />
+
+        <button class="driver-button">Kuljettajan nappi, kling</button>`
+  driverButton = document.querySelector(".driver-button");
+       driverButton.addEventListener("click", function() {
+         postDriverButton();
+       });
+  stopList = document.querySelector(".stop-list");
+}
 
 mqttClient.on("message", function (topic, payload) {
   console.log([topic, payload].join(": "))
   addStop(JSON.parse(payload));
 })
 
-// UI-päivitys
-
-var currentStop;
-var driverButton = document.querySelector(".driver-button");
-driverButton.addEventListener("click", function() {
-  postDriverButton();
-});
-
-var stopList = document.querySelector(".stop-list");
-var stops = [];
-var stopLoadedData = [];
-
 function getStops() {
+  mqttClient.subscribe('stoprequests/' + currentRoute);
+
   // Hae stopit
   var xmlHttp = new XMLHttpRequest();
   xmlHttp.onreadystatechange = function() {
       if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
           // Luo nodet
           var s = xmlHttp.responseText.toString();
+          document.querySelector("h2").innerHTML = "Pysäkit (" + currentRoute + ")";
           if (s !== undefined) {
             stopLoadedData = JSON.parse(s);
             for (var d of stopLoadedData.data.pattern.stops) {
@@ -46,7 +59,7 @@ function getStops() {
               } else {
                 color = "red";
               }
-              item.innerHTML = d.name + " | <span style='font-weight: bold; color: " + color + ";'>" + d.count + "</span>";
+              item.innerHTML = "<span class='run-animation'>" + d.name + " | <span style='font-weight: bold; color: " + color + ";'>" + d.count + "</span></span>";
               stopList.appendChild(item);
               d.node = item;
               d.count = 1;
@@ -57,7 +70,7 @@ function getStops() {
   xmlHttp.open("POST", "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql", true);
   xmlHttp.setRequestHeader("Content-type", "application/graphql");
   xmlHttp.send(`{
-    pattern(id:"HSL:1050:1:01") {
+    pattern(id:"HSL:1506:0:01") {
         name
         stops{
           gtfsId
@@ -74,7 +87,7 @@ function addStop(payload) {
       if (payload.request_type=="cancel") {
         s.count--;
       // Lisätään pysähdys
-      } else if (payload.request_Type=="stop") {
+      } else if (payload.request_type=="stop") {
         s.count++;
       }
       var color;
@@ -83,7 +96,7 @@ function addStop(payload) {
       } else {
         color = "red";
       }
-      s.node.innerHTML = s.name + " | <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span>";
+      s.node.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
       return;
     }
   }
