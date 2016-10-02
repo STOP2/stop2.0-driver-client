@@ -1,12 +1,9 @@
 class UI {
 
-  static init() {
-    mqttClient.on("message", function (topic, payload) {
-      console.log([topic, payload].join(": "));
-      addStop(JSON.parse(payload));
-    });
-    UI.createUI();
-    NetworkHandler.getCurrentVehicleData();
+  constructor() {
+      this.driverButton = null;
+      this.stopList = null;
+      this.stops = [];
   }
 
   static createUI() {
@@ -18,11 +15,11 @@ class UI {
           <br />
 
           <button class="driver-button">Kuljettajan nappi, kling</button>`;
-    driverButton = document.querySelector(".driver-button");
-         driverButton.addEventListener("click", function() {
+    this.driverButton = document.querySelector(".driver-button");
+         this.driverButton.addEventListener("click", function() {
            NetworkHandler.postDriverButton();
          });
-    stopList = document.querySelector(".stop-list");
+    this.stopList = document.querySelector(".stop-list");
   }
 
   static renderStops(trip) {
@@ -33,14 +30,14 @@ class UI {
       var item = document.createElement("li");
       item.classList.add("stop-" + s.gtfsId);
       item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
-      stopList.appendChild(item);
+      this.stopList.appendChild(item);
       stop.node = item;
-      stops.push(s);
+      this.stops.push(s);
     }
   }
 
   static addStop(payload) {
-    for (var s of stops) {
+    for (var s of this.stops) {
       if (s.gtfsId == payload.stop_id) {
         // Perutaan pysähdys
         if (payload.request_type=="cancel") {
