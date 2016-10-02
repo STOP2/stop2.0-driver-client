@@ -8,6 +8,12 @@ var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 var currentRoute = "";
 var currentStop;
 
+var tripData;
+
+var driverButton;
+var stopList;
+var stops = [];
+
 class Main {
     static init() {
       mqttClient.on("message", function (topic, payload) {

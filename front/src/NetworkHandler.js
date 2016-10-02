@@ -1,14 +1,10 @@
 class NetworkHandler {
 
-  constructor() {
-    this.tripData = null;
-  }
-
   static hslRealTimeAPIHandler() {
     if (this.status == 200 && this.responseText) {
-      this.tripData = NetworkHandler.parseHSLRealTimeData(this.responseText);
+      tripData = NetworkHandler.parseHSLRealTimeData(this.responseText);
       var queryStr = `{
-        fuzzyTrip(route: "${this.tripData.line}", direction: ${this.tripData.direction}, date: "${this.tripData.date}", time: ${this.tripData.start})
+        fuzzyTrip(route: "${tripData.line}", direction: ${tripData.direction}, date: "${tripData.date}", time: ${tripData.start})
           {
             gtfsId
             stops
@@ -57,9 +53,9 @@ class NetworkHandler {
   static hslTripQueryHandler() {
     if (this.status == 200 && this.responseText != null) {
       var queryRes = JSON.parse(this.responseText).data.fuzzyTrip;
-      this.tripData.stops = queryRes.stops;
-      this.tripData.route = queryRes.route;
-      UI.renderStops(this.tripData);
+      tripData.stops = queryRes.stops;
+      tripData.route = queryRes.route;
+      UI.renderStops(tripData);
     } else {
       console.log("Connection to HSL GraphQL service failed");
     }

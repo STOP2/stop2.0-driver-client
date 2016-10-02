@@ -1,11 +1,5 @@
 class UI {
 
-  constructor() {
-      this.driverButton = null;
-      this.stopList = null;
-      this.stops = [];
-  }
-
   static createUI() {
     document.querySelector(".content").innerHTML = `
           <h2>Pysäkit</h2>
@@ -15,11 +9,11 @@ class UI {
           <br />
 
           <button class="driver-button">Kuljettajan nappi, kling</button>`;
-    this.driverButton = document.querySelector(".driver-button");
-         this.driverButton.addEventListener("click", function() {
+    driverButton = document.querySelector(".driver-button");
+         driverButton.addEventListener("click", function() {
            NetworkHandler.postDriverButton();
          });
-    this.stopList = document.querySelector(".stop-list");
+    stopList = document.querySelector(".stop-list");
   }
 
   static renderStops(trip) {
@@ -30,14 +24,14 @@ class UI {
       var item = document.createElement("li");
       item.classList.add("stop-" + s.gtfsId);
       item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
-      this.stopList.appendChild(item);
+      stopList.appendChild(item);
       stop.node = item;
-      this.stops.push(s);
+      stops.push(s);
     }
   }
 
   static addStop(payload) {
-    for (var s of this.stops) {
+    for (var s of stops) {
       if (s.gtfsId == payload.stop_id) {
         // Perutaan pysähdys
         if (payload.request_type=="cancel") {
