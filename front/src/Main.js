@@ -1,3 +1,5 @@
+"use strict";
+
 const RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 const BUS_ID = 1209;
 const STOP_API = "http://test";
@@ -20,9 +22,7 @@ class Main {
         console.log([topic, payload].join(": "));
         UI.addStop(JSON.parse(payload));
       });
-      UI.createUI();
       NetworkHandler.getCurrentVehicleData();
+      UI.createUI();
     }
 }
-
-Main.init();

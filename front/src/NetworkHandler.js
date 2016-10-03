@@ -20,7 +20,7 @@ class NetworkHandler {
       }`;
 
       var r = new XMLHttpRequest();
-      r.onload = hslTripQueryHandler;
+      r.onload = this.hslTripQueryHandler;
       r.open("POST", HSL_API, true);
       r.setRequestHeader("Content-type", "application/graphql");
       r.send(queryStr);
