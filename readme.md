@@ -7,8 +7,10 @@
 
 ## front
 
-- `browserMqtt.js` - Webpack-packed MQTT.js for browser use
-- `index.js` - Varsinainen koodi
+- `BrowserMqtt.js` - Webpack-packed MQTT.js for browser use
+- `Main.js` - Global variables & main class
+- `NetworkHandler.js` - Connection to STOP2 and HSL APIs
+- `UI.js` - User interface
 
 ### Usage
 - Go to `/front/`
