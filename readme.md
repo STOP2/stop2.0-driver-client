@@ -1,35 +1,36 @@
 [![Build Status](https://travis-ci.org/STOP2/stop2.0-driver-client.svg?branch=master)](https://travis-ci.org/STOP2/stop2.0-driver-client)
 
-# Kuljettajasoftaproto
+# Driver Client prototype
 
-- `back`-kansio - Docker-köntti joka toimittaa dataa frontille
-- `front`-kansio - JavaScript-prototyyppi frontista
+- `back`-folder - Docker-module for providing data to frontend
+- `front`-folder - frontend JavaScript prototype
 
 ## front
 
-- `browserMqtt.js` - Webpackilla selainkäyttöön paketoitu node-moduuli MQTT.js
+- `browserMqtt.js` - Webpack-packed MQTT.js for browser use
 - `index.js` - Varsinainen koodi
 
-### Käyttöohje
-- Asenna `npm`
+### Usage
+- Go to `/front/`
+- Install `npm`
 - `npm install http-server -g`
 - `http-server`
-- Mene IP:hen `http://127.0.0.1:8080/`
+- Go to `http://127.0.0.1:8080/`
 
 ## back
 
-Docker-kontti, jossa on mosquitto, joka kuuntelee porteilla 1883 (MQTT) ja 9001 (websocket).
+Docker-container with mosquitto listening to ports 1883 (MQTT) and 9001 (websocket).
 
-Käyttö:
+### Usage
 
-Projektihakemistossa:
+In the project directory:
 
 ```
 docker build -t mosquitto -f back/Dockerfile .
 docker run -p 1883:1883 -p 9001:9001 mosquitto
 ```
 
-Testit voi ajaa lokaalisti (Dockerin sisällä) projektihakemistossa komennolla: 
+Tests can be run locally (inside Docker): 
 ```
 docker run -t -v `pwd`:/build mosquitto /build/tests/integration.sh
 ```
