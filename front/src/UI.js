@@ -24,16 +24,18 @@ class UI {
   }
 
   static renderStops(trip) {
-    var t = trip.start / 60;
-    document.querySelector("h2").innerHTML = trip.route.longName + ", lähtö klo " + Math.floor(t / 60) + ":" + (t % 60);
-    for (var s of trip.stops) {
-      s.count = 0;
-      var item = document.createElement("li");
-      item.classList.add("stop-" + s.gtfsId);
-      item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
-      stopList.appendChild(item);
-      s.node = item;
-      stops.push(s);
+    if (trip) {
+      var t = trip.start / 60;
+      document.querySelector("h2").innerHTML = trip.route.longName + ", lähtö klo " + Math.floor(t / 60) + ":" + (t % 60);
+      for (var s of trip.stops) {
+        s.count = 0;
+        var item = document.createElement("li");
+        item.classList.add("stop-" + s.gtfsId);
+        item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
+        stopList.appendChild(item);
+        s.node = item;
+        stops.push(s);
+      }
     }
   }
 

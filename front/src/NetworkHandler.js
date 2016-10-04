@@ -100,7 +100,13 @@ class NetworkHandler {
     //r.open("GET", RT_API_URL + BUS_ID + "/"); // asynchronous by default
     return this.getHSLRealTimeAPIData("GET", RT_API_URL + BUS_ID + "/")
       .then(this.parseHSLRealTimeData)
-      .then(this.getHSLTripData);
+      .then(this.getHSLTripData)
+      .then(this.startListeningToMQTT);
+  }
+
+  static startListeningToMQTT(newTrip) { //TODO: Tämä ei vielä toimi, miten saadaan sama ID kuin backissa?
+    mqttClient.subscribe('stoprequests/' + newTrip.line.replace(":","_"));
+    return newTrip;
   }
 
   static postDriverButton() {
