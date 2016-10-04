@@ -100,7 +100,7 @@ class NetworkHandler {
     //r.open("GET", RT_API_URL + BUS_ID + "/"); // asynchronous by default
     return this.getHSLRealTimeAPIData("GET", RT_API_URL + BUS_ID + "/")
       .then(this.parseHSLRealTimeData)
-      .then(this.getHSLTripData).then(UI.renderStops);
+      .then(this.getHSLTripData);
   }
 
   static postDriverButton() {
