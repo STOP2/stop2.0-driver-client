@@ -47,6 +47,8 @@ class NetworkHandler {
     return {
       vehicle: tmpobj.veh,
       line: "HSL:" + tmpobj.line,
+      lat: tmpobj.lat,
+      long: tmpobj.long,
       direction: tmpobj.dir - 1,
       start: ((Math.floor(Number.parseInt(tmpobj.start, 10) / 100) * 60) + Number.parseInt(tmpobj.start, 10) % 100) * 60,
       timeStr: tmpobj.tst,
@@ -63,6 +65,8 @@ class NetworkHandler {
             {
               gtfsId
               name
+              lat
+              lon
             }
             route
             {
