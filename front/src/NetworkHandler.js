@@ -15,7 +15,7 @@ class NetworkHandler {
           resolve(req.responseText);
         } else {
           // If it fails, reject the promise with a error message
-          reject(Error('Connection to HSL real time API failed; error code:' + r.statusText));
+          reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
         }
       };
       req.onerror = function() {
@@ -28,11 +28,15 @@ class NetworkHandler {
   }
 
   static parseHSLRealTimeData(str) {
-    var tmpobj = JSON.parse(str);
-    if (!tmpobj) {
-      return null;
+    if (!str || str === '{}') {
+      throw new Error(" ");
     }
-    tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
+    var tmpobj = JSON.parse(str);
+    try {
+      tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
+    } catch (e) {
+      throw new Error("invalid input data: ")
+    }
     var d = new Date(tmpobj.tst);
     var strDate = d.getUTCFullYear();
     var m = d.getMonth() + 1;
@@ -81,7 +85,7 @@ class NetworkHandler {
           resolve(newTrip);
         } else {
           // If it fails, reject the promise with a error message
-          reject(Error('Connection to HSL real time API failed; error code:' + r.statusText));
+          reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
         }
       };
       req.onerror = function() {
@@ -94,17 +98,15 @@ class NetworkHandler {
   }
 
   static getCurrentVehicleData(vehicleName) {
-    //var r = new XMLHttpRequest();
-    //r.open("GET", RT_API_URL + BUS_ID + "/"); // asynchronous by default
     return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
       .then(this.parseHSLRealTimeData)
       .then(this.getHSLTripData)
       .then(this.startListeningToMQTT);
   }
 
-  static startListeningToMQTT(newTrip) {
-    mqttClient.subscribe('stoprequests/' + newTrip.gtfsId.replace("HSL:",""));
-    return newTrip;
+  static startListeningToMQTT(trip) {
+    mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+    return trip;
   }
 
   static postDriverButton() {

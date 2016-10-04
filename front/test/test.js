@@ -2,6 +2,7 @@
 //var assert = chai.assert;
 //var sinon = require('sinon');
 chai.should();
+chai.expect();
 
 describe('NetworkHandler', function() {
   var xhr;
@@ -192,11 +193,18 @@ describe('NetworkHandler', function() {
   });
 
   describe('#getHSLRealTimeAPIData', function () {
-    it('should return a promise', function(){
-      NetworkHandler.getHSLRealTimeAPIData("GET", RT_API_URL + BUS_ID + "/").then(function(result){
+    it('should return a promise with valid data', function(){
+      NetworkHandler.getHSLRealTimeAPIData("GET", RT_API_URL + 1210 + "/").then(function(result){
         result.should.deep.equal(HSLData);
       });
       requests[0].respond(200, {'Content-Type': 'text/json'}, HSLData);
+    });
+
+    it('should in case of failure return an Error object', function(){
+      NetworkHandler.getHSLRealTimeAPIData("GET", RT_API_URL + 1210 + "/").catch(function(result){
+        result.should.be.a('Error');
+      });
+      requests[0].respond(404, {'Content-Type': 'text/html'}, 'no such thing here');
     });
   });
 
@@ -204,6 +212,18 @@ describe('NetworkHandler', function() {
     it('should return a valid trip data object', function () {
       var d =  NetworkHandler.parseHSLRealTimeData(HSLData);
       d.should.deep.equal(testTripData);
+    });
+
+    it('should throw an error if input is "{}"', function () {
+      chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, '{}')).to.throw(Error);
+      });
+
+    it('should throw an error if input is ""', function () {
+      chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, '')).to.throw(Error);
+    });
+
+    it('should throw an error if given invalid input', function () {
+      chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, '{"foo": {"bar": "baz"}}')).to.throw(Error);
     });
   });
 
@@ -213,6 +233,13 @@ describe('NetworkHandler', function() {
         result.should.deep.equal(JSON.parse(GraphQLResponse));
       });
       requests[0].respond(200, {'Content-Type': 'application/json'}, GraphQLResponse);
+    });
+
+    it('should return an Error in case of failure', function () {
+      NetworkHandler.getHSLTripData(testTripData).then(function (result) {
+        result.should.be.a('Error');
+      });
+      requests[0].respond(404, {'Content-Type': 'application/html'}, 'nopenopenope');
     });
   });
 });
