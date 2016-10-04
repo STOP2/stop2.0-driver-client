@@ -25,7 +25,15 @@ class UI {
   static renderStops(trip) {
     if (trip) {
       var t = trip.start / 60;
-      document.querySelector("h2").innerHTML = trip.route.longName + ", lähtö klo " + Math.floor(t / 60) + ":" + (t % 60);
+      var hours = Math.floor(t / 60)
+      if (hours < 10) {
+        hours = "0" + hours;
+      }
+      var minutes = (t % 60);
+      if (minutes < 10) {
+        minutes = "0" + minutes;
+      }
+      document.querySelector("h2").innerHTML = trip.route.longName + ", lähtö klo " + hours + ":" + minutes;
       for (var s of trip.stops) {
         s.count = 0;
         var item = document.createElement("li");

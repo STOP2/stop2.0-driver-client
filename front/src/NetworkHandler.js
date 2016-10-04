@@ -102,8 +102,8 @@ class NetworkHandler {
       .then(this.startListeningToMQTT);
   }
 
-  static startListeningToMQTT(newTrip) { //TODO: Tämä ei vielä toimi, miten saadaan sama ID kuin backissa?
-    mqttClient.subscribe('stoprequests/' + newTrip.line.replace(":","_"));
+  static startListeningToMQTT(newTrip) {
+    mqttClient.subscribe('stoprequests/' + newTrip.gtfsId.replace("HSL:",""));
     return newTrip;
   }
 
