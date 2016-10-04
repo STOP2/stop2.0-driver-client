@@ -1,13 +1,11 @@
 "use strict";
 
 const RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
-const BUS_ID = 1210;
 const HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 
 class NetworkHandler {
 
   static getHSLRealTimeAPIData(method, url) {
-
     return new Promise(function (resolve, reject) {
       var req = new XMLHttpRequest();
       req.open(method, url, true);
@@ -95,10 +93,10 @@ class NetworkHandler {
     });
   }
 
-  static getCurrentVehicleData() {
+  static getCurrentVehicleData(vehicleName) {
     //var r = new XMLHttpRequest();
     //r.open("GET", RT_API_URL + BUS_ID + "/"); // asynchronous by default
-    return this.getHSLRealTimeAPIData("GET", RT_API_URL + BUS_ID + "/")
+    return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
       .then(this.parseHSLRealTimeData)
       .then(this.getHSLTripData)
       .then(this.startListeningToMQTT);

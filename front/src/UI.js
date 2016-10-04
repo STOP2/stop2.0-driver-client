@@ -4,7 +4,6 @@ var stops = [];
 var stopList;
 var driverButton;
 
-
 class UI {
 
   static createUI() {
