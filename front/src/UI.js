@@ -1,5 +1,10 @@
 "use strict";
 
+var stops = [];
+var stopList;
+var driverButton;
+
+
 class UI {
 
   static createUI() {
@@ -27,7 +32,7 @@ class UI {
       item.classList.add("stop-" + s.gtfsId);
       item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
       stopList.appendChild(item);
-      stop.node = item;
+      s.node = item;
       stops.push(s);
     }
   }
