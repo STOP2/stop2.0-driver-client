@@ -38,7 +38,7 @@ class UI {
         s.count = 0;
         var item = document.createElement("li");
         item.classList.add("stop-" + s.gtfsId);
-        item.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
+        item.innerHTML = "<span class='run-animation'>" + s.name + " <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
         stopList.appendChild(item);
         s.node = item;
         stops.push(s);
@@ -58,7 +58,7 @@ class UI {
           s.count++;
         }
         var color = s.count === 0? "blue": "red";
-        s.node.innerHTML = "<span class='run-animation'>" + s.name + " | <span style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
+        s.node.innerHTML = "<span class='run-animation'>" + s.name + " <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
         return;
       }
     }
