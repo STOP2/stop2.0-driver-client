@@ -1,5 +1,6 @@
 "use strict";
 
+const STOP_API = "http://asd.asd"
 const RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 const HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 
@@ -111,7 +112,7 @@ class NetworkHandler {
 
   static postDriverButton() {
     var xhttp = new XMLHttpRequest();
-    xhttp.open("POST", api + "/stoprequests", true);
+    xhttp.open("POST", STOP_API + "/stoprequests", true);
     xhttp.send();
   }
 
