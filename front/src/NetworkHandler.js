@@ -33,7 +33,12 @@ class NetworkHandler {
     if (!tmpobj) {
       return null;
     }
-    tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
+    try {
+      tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
+    } catch(err) {
+      console.error("Ihme error.");
+      console.error(err);
+    }
     var d = new Date(tmpobj.tst);
     var strDate = d.getUTCFullYear();
     var m = d.getMonth() + 1;
