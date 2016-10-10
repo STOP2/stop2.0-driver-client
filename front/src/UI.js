@@ -48,7 +48,7 @@ class UI {
 
   static addStop(payload) {
     for (var s of stops) {
-      if (s.gtfsId.replace("HSL:","") == payload.stop_id) {
+      if (s.gtfsId == payload.stop_id) {
         // Perutaan pysähdys
         if (payload.request_type=="cancel") {
           if (s.count == 0) return;
