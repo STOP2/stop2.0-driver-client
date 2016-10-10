@@ -33,7 +33,8 @@ class UI {
       if (minutes < 10) {
         minutes = "0" + minutes;
       }
-      document.querySelector("h2").innerHTML = trip.route.longName + ", lähtö klo " + hours + ":" + minutes;
+      console.log(trip.tripHeadsign);
+      document.querySelector("h2").innerHTML = trip.route.longName + " (suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
       for (var s of trip.stops) {
         s.count = 0;
         var item = document.createElement("li");
