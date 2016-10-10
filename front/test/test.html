@@ -19,12 +19,18 @@
     <div id="mocha"></div>
     <script src="../node_modules/mocha/mocha.js"></script>
     <script src="../node_modules/chai/chai.js"></script>
+    <script src="../node_modules/sinon/pkg/sinon.js"></script>
+
+
     <script>
       mocha.ui('bdd')
       expect = chai.expects
+      assert = chai.assert
     </script>
-    <script src="../browserMqtt.js"></script>
-    <script src="../main.js"></script>
+    <script src="../src/BrowserMqtt.js"></script>
+    <script src="../src/UI.js"></script>
+    <script src="../src/NetworkHandler.js"></script>
+    <script src="../src/Main.js"></script>
     <script src="test.js"></script>
     <script>
       mocha.run()

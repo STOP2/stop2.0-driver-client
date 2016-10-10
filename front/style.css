@@ -1,4 +1,4 @@
-body {
+html, body {
   padding: 0;
   margin: 0;
 }
@@ -24,7 +24,8 @@ h1 {
 h2 {
   font-family: 'Nunito', sans-serif;
   font-weight: 300;
-  font-size: 20pt
+  font-size: 20pt;
+  padding-left: 2.5rem;
 }
 
 button {
@@ -59,4 +60,23 @@ br {
   100% {
     background: none;
   }
+}
+
+ul {
+  list-style: none;
+  font-size: 16pt;
+  padding-right: 2rem;
+}
+
+li {
+  padding: 0.5rem;
+  margin: 4px;
+}
+
+li:nth-child(odd) {
+  background-color: #dddddc;
+}
+
+.number {
+  float: right;
 }

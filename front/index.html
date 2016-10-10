@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Stop 2.0 Kuljettaja-UI</title>
+    <meta charset="utf-8" />
+    <title>Stop 2.0 Kuljettajapääte</title>
     <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,700" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
   </head>
   <body>
-    <h1>Stop 2.0 Kuljettaja-UI</h1>
+    <h1>Stop 2.0 Kuljettajapääte</h1>
 
     <div class="content">
-      Bussin koodi: <input type="text" id="route-name"></input> <button onclick="init()">OK</button>
+      Ajoneuvon numero (esim. 1210): <input type="text" id="vehicle-name"></input> <button onclick="Main.init()">OK</button>
     </div>
 
-    <script src="./browserMqtt.js"></script>
-    <script src="./main.js"></script>
+    <script src="./src/BrowserMqtt.js"></script>
+    <script src="./src/UI.js"></script>
+    <script src="./src/NetworkHandler.js"></script>
+    <script src="./src/Main.js"></script>
   </body>
 </html>
