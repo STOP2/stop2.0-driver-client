@@ -16,7 +16,7 @@ class NetworkHandler {
           resolve(req.responseText);
         } else {
           // If it fails, reject the promise with a error message
-          reject(Error('Connection to HSL real time API failed; error code:' + r.statusText));
+          reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
         }
       };
       req.onerror = function() {
@@ -29,15 +29,14 @@ class NetworkHandler {
   }
 
   static parseHSLRealTimeData(str) {
-    var tmpobj = JSON.parse(str);
-    if (!tmpobj) {
-      return null;
+    if (!str || str === '{}') {
+      throw new Error(" ");
     }
+    var tmpobj = JSON.parse(str);
     try {
       tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
-    } catch(err) {
-      console.error("Ihme error.");
-      console.error(err);
+    } catch (e) {
+      throw new Error("invalid input data: ")
     }
     var d = new Date(tmpobj.tst);
     var strDate = d.getUTCFullYear();
@@ -48,6 +47,8 @@ class NetworkHandler {
     return {
       vehicle: tmpobj.veh,
       line: "HSL:" + tmpobj.line,
+      lat: tmpobj.lat,
+      long: tmpobj.long,
       direction: tmpobj.dir - 1,
       start: ((Math.floor(Number.parseInt(tmpobj.start, 10) / 100) * 60) + Number.parseInt(tmpobj.start, 10) % 100) * 60,
       timeStr: tmpobj.tst,
@@ -64,6 +65,8 @@ class NetworkHandler {
             {
               gtfsId
               name
+              lat
+              lon
             }
             route
             {
@@ -87,7 +90,7 @@ class NetworkHandler {
           resolve(newTrip);
         } else {
           // If it fails, reject the promise with a error message
-          reject(Error('Connection to HSL real time API failed; error code:' + r.statusText));
+          reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
         }
       };
       req.onerror = function() {
@@ -100,17 +103,15 @@ class NetworkHandler {
   }
 
   static getCurrentVehicleData(vehicleName) {
-    //var r = new XMLHttpRequest();
-    //r.open("GET", RT_API_URL + BUS_ID + "/"); // asynchronous by default
     return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
       .then(this.parseHSLRealTimeData)
       .then(this.getHSLTripData)
       .then(this.startListeningToMQTT);
   }
 
-  static startListeningToMQTT(newTrip) {
-    mqttClient.subscribe('stoprequests/' + newTrip.gtfsId.replace("HSL:",""));
-    return newTrip;
+  static startListeningToMQTT(trip) {
+    mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+    return trip;
   }
 
   static postDriverButton() {
