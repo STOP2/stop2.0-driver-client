@@ -110,6 +110,7 @@ class NetworkHandler {
   }
 
   static startListeningToMQTT(trip) {
+    console.log('stoprequests/' + trip.gtfsId.replace("HSL:",""));
     mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
     return trip;
   }
