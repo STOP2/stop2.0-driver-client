@@ -61,6 +61,7 @@ class NetworkHandler {
         fuzzyTrip(route: "${tripData.line}", direction: ${tripData.direction}, date: "${tripData.date}", time: ${tripData.start})
           {
             gtfsId
+            tripHeadsign
             stops
             {
               gtfsId
@@ -101,6 +102,15 @@ class NetworkHandler {
       req.send(queryStr);
     });
   }
+
+  // static getCurrentBusPosition() {
+  //   this.getHSLRealTimeAPIData()
+  // }
+  //
+  // /* position -> stop id */
+  // static getNextStop(position) {
+  //
+  // }
 
   static getCurrentVehicleData(vehicleName) {
     return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
