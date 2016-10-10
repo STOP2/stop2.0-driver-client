@@ -34,12 +34,12 @@ class UI {
         minutes = "0" + minutes;
       }
       console.log(trip.tripHeadsign);
-      document.querySelector("h2").innerHTML = trip.route.longName + " (suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
+      document.querySelector("h2").innerHTML = trip.route.longName + " (" + trip.gtfsId + ", " + "suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
       for (var s of trip.stops) {
         s.count = 0;
         var item = document.createElement("li");
-        item.classList.add("stop-" + s.gtfsId.replace("HSL:",""));
-        item.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.gtfsId.replace("HSL:","") + ") <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
+        item.classList.add("stop-" + s.code);
+        item.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
         stopList.appendChild(item);
         s.node = item;
         stops.push(s);
@@ -49,7 +49,7 @@ class UI {
 
   static addStop(payload) {
     for (var s of stops) {
-      if (s.gtfsId == payload.stop_id) {
+      if (s.code == payload.stop_id) {
         // Perutaan pysähdys
         if (payload.request_type=="cancel") {
           if (s.count == 0) return;
@@ -59,7 +59,7 @@ class UI {
           s.count++;
         }
         var color = s.count === 0? "blue": "red";
-        s.node.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.gtfsId.replace("HSL:","") + ") <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
+        s.node.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
         return;
       }
     }

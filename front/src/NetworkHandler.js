@@ -64,6 +64,7 @@ class NetworkHandler {
             tripHeadsign
             stops
             {
+              code
               gtfsId
               name
               lat
