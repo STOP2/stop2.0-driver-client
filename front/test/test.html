@@ -5,32 +5,24 @@
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
   </head>
   <body>
+    <h1>Stop 2.0 Kuljettajapääte</h1>
 
     <div class="content">
-      <h2>Pysäkit</h2>
-
-      <ul class="stop-list"></ul>
-
-      <br />
-
-      <button class="driver-button">Kuljettajan nappi, kling</button>
+      Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button onclick="Main.init()">OK</button>
     </div>
 
     <div id="mocha"></div>
+
     <script src="../node_modules/mocha/mocha.js"></script>
     <script src="../node_modules/chai/chai.js"></script>
     <script src="../node_modules/sinon/pkg/sinon.js"></script>
+    <script>mocha.setup('bdd')</script>
 
-
-    <script>
-      mocha.ui('bdd')
-      expect = chai.expects
-      assert = chai.assert
-    </script>
     <script src="../src/BrowserMqtt.js"></script>
     <script src="../src/UI.js"></script>
     <script src="../src/NetworkHandler.js"></script>
     <script src="../src/Main.js"></script>
+
     <script src="test.js"></script>
     <script>
       mocha.run()

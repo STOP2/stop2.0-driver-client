@@ -1,28 +1,24 @@
 "use strict";
 
-var stops = [];
-var stopList;
-var driverButton;
+var UI = function() {}
 
-class UI {
+UI.prototype.createUI = function() {
+  document.querySelector(".content").innerHTML = `
+        <h2>Pysäkit</h2>
 
-  static createUI() {
-    document.querySelector(".content").innerHTML = `
-          <h2>Pysäkit</h2>
+        <ul class="stop-list"></ul>
 
-          <ul class="stop-list"></ul>
+        <br />
 
-          <br />
+        <button class="driver-button">Kuljettajan nappi, kling</button>`;
+  var driverButton = document.querySelector(".driver-button");
+  driverButton.addEventListener("click", function() {
+    NetworkHandler.postDriverButton();
+  });
+  stopList = document.querySelector(".stop-list");
+}
 
-          <button class="driver-button">Kuljettajan nappi, kling</button>`;
-    driverButton = document.querySelector(".driver-button");
-         driverButton.addEventListener("click", function() {
-           NetworkHandler.postDriverButton();
-         });
-    stopList = document.querySelector(".stop-list");
-  }
-
-  static renderStops(trip) {
+UI.prototype.renderStops = function(trip) {
     if (trip) {
       var t = trip.start / 60;
       var hours = Math.floor(t / 60)
@@ -47,7 +43,7 @@ class UI {
     }
   }
 
-  static addStop(payload) {
+UI.prototype.addStop = function(payload) {
     for (var s of stops) {
       if (s.code == payload.stop_id) {
         // Perutaan pysähdys
@@ -65,4 +61,4 @@ class UI {
     }
   }
 
-}
+module.exports = new UI();

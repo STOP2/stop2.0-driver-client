@@ -1,8 +1,7 @@
-//var chai = require('chai');
-//var assert = chai.assert;
-//var sinon = require('sinon');
-chai.should();
-chai.expect();
+var chai = require('chai');
+var assert = chai.assert;
+var sinon = require('sinon');
+var NetworkHandler = require('../src/NetworkHandler');
 
 describe('NetworkHandler', function() {
   var xhr;
@@ -296,36 +295,10 @@ describe('NetworkHandler', function() {
 }
 `;
 
-  beforeEach(function() {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-
-    xhr.onCreate = function (xhr) {
-      requests.push(xhr);
-    };
-
-  });
-
-  describe('#getHSLRealTimeAPIData', function () {
-    it('should return a promise with valid data', function(){
-      NetworkHandler.getHSLRealTimeAPIData("GET", RT_API_URL + 1210 + "/").then(function(result){
-        result.should.deep.equal(HSLData);
-      });
-      requests[0].respond(200, {'Content-Type': 'text/json'}, HSLData);
-    });
-
-    it('should in case of failure return an Error object', function(){
-      NetworkHandler.getHSLRealTimeAPIData("GET", RT_API_URL + 1210 + "/").catch(function(result){
-        result.should.be.a('Error');
-      });
-      requests[0].respond(404, {'Content-Type': 'text/html'}, 'no such thing here');
-    });
-  });
-
   describe('#parseHSLRealTimeData', function () {
     it('should return a valid trip data object', function () {
-      var d =  NetworkHandler.parseHSLRealTimeData(HSLData);
-      d.should.deep.equal(testTripData);
+      var d = NetworkHandler.parseHSLRealTimeData(HSLData);
+      assert.deepEqual(d,testTripData);
     });
 
     it('should throw an error if input is "{}"', function () {
@@ -341,23 +314,4 @@ describe('NetworkHandler', function() {
     });
   });
 
-  describe('#getHSLTripData', function () {
-    it('should return a promise with valid data', function () {
-      NetworkHandler.getHSLTripData(testTripData).then(function (result) {
-        result.should.deep.equal(JSON.parse(GraphQLResponse));
-      });
-      requests[0].respond(200, {'Content-Type': 'application/json'}, GraphQLResponse);
-    });
-
-    it('should return an Error in case of failure', function () {
-      NetworkHandler.getHSLTripData(testTripData).then(function (result) {
-        result.should.be.a('Error');
-      });
-      requests[0].respond(404, {'Content-Type': 'application/html'}, 'nopenopenope');
-    });
-  });
 });
-
-
-
-
