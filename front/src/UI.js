@@ -8,13 +8,13 @@ class UI {
 
   static createUI() {
     document.querySelector(".content").innerHTML = `
+          <button class="driver-button">Kuljettajan nappi, kling</button>
+
           <h2>Pysäkit</h2>
 
           <ul class="stop-list"></ul>
 
-          <br />
-
-          <button class="driver-button">Kuljettajan nappi, kling</button>`;
+          <br />`;
     driverButton = document.querySelector(".driver-button");
          driverButton.addEventListener("click", function() {
            NetworkHandler.postDriverButton();

@@ -2,6 +2,8 @@
 
 var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 var vehicleId = -1;
+var tripId;
+var lastStop;
 
 class Main {
     static init() {

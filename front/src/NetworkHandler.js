@@ -89,6 +89,7 @@ class NetworkHandler {
               newTrip[prop] = tripData[prop];
             }
           }
+          var tripId = newTrip.gtfsId;
           resolve(newTrip);
         } else {
           // If it fails, reject the promise with a error message
@@ -129,7 +130,12 @@ class NetworkHandler {
   static postDriverButton() {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", STOP_API + "/stoprequests", true);
-    xhttp.send();
+    xhttp.send({
+      "message": "no_passengers_at_stop"
+      "trip_id": tripId,
+      "stop_id": lastStop,
+      "bus_id": vehicleId
+    });
   }
 
 }
