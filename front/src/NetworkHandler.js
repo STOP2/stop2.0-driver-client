@@ -22,7 +22,7 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
     };
     req.send();
   });
-}
+};
 
 NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
   if (!str || str === '{}') {
@@ -50,7 +50,7 @@ NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
     timeStr: tmpobj.tst,
     date: strDate
   }
-}
+};
 
 NetworkHandler.prototype.getHSLTripData = function(tripData) {
   var queryStr = `{
@@ -88,7 +88,7 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
         resolve(newTrip);
       } else {
         // If it fails, reject the promise with a error message
-        reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
+        reject(Error('Connection to HSL real time API failed; error code: ' + req.statusText));
       }
     };
     req.onerror = function() {
@@ -98,25 +98,25 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
     };
     req.send(queryStr);
   });
-}
+};
 
 NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
   return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
     .then(this.parseHSLRealTimeData)
     .then(this.getHSLTripData)
     .then(this.startListeningToMQTT);
-}
+};
 
 NetworkHandler.prototype.startListeningToMQTT = function(trip) {
   console.log('stoprequests/' + trip.gtfsId.replace("HSL:",""));
   mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
   return trip;
-}
+};
 
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();
   xhttp.open("POST", STOP_API + "/stoprequests", true);
   xhttp.send();
-}
+};
 
 module.exports = new NetworkHandler();
