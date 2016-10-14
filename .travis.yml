@@ -6,7 +6,7 @@ services:
 # - docker
 
 before_install:
-npm install
+ - npm install
 # - docker build -t mosquitto -f back/Dockerfile .
 # - docker run -d -p 1883:1883 -p 9001:9001 mosquitto
 
