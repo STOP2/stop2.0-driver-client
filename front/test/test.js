@@ -7,8 +7,7 @@ chai.should();
 var NetworkHandler = require('../src/NetworkHandler');
 
 describe('NetworkHandler', function() {
-  var xhr;
-  var requests;
+
   var HSLData = '{"/hfp/journey/bus/1210/1075/2/XXX/1942/1413118/60;25/20/56/53":' +
     '{"VP":' +
     '{"desi":"1075","dir":"2","oper":"XXX","veh":"1210","tst":"2016-10-03T16:52:10.017Z",' +
@@ -317,7 +316,10 @@ describe('NetworkHandler', function() {
     });
   });
 
-  describe('#getHSLTripData', function (done) {
+  describe.skip('#getHSLTripData', function (done) {
+    var xhr;
+    var requests;
+
     beforeEach(function () {
       requests = [];
       xhr = sinon.useFakeXMLHttpRequest();
@@ -333,7 +335,7 @@ describe('NetworkHandler', function() {
       requests = [];
     });
 
-    it.skip('description', function (done) {
+    it('return valid data for valid request', function (done) {
       var r = NetworkHandler.getHSLTripData(testTripData);
       requests[0].respond(200, { "Content-Type": "application/json"}, GraphQLResponse);
       r.should.eventually.deepEqual("this should fail").and.notify(done);
@@ -341,6 +343,8 @@ describe('NetworkHandler', function() {
   });
 
   describe('#getHSLRealTimeAPIData', function () {
+    var xhr;
+    var requests;
 
     beforeEach(function () {
       requests = [];
