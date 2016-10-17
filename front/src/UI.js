@@ -1,6 +1,8 @@
 "use strict";
 
 var UI = function() {}
+var stops = [];
+var stopList;
 
 UI.prototype.createUI = function() {
   document.querySelector(".content").innerHTML = `
@@ -19,6 +21,7 @@ UI.prototype.createUI = function() {
 }
 
 UI.prototype.renderStops = function(trip) {
+    window.currentTrip = trip;
     if (trip) {
       var t = trip.start / 60;
       var hours = Math.floor(t / 60)
