@@ -100,6 +100,13 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
   });
 };
 
+NetworkHandler.prototype.getNextStop = function(trip) {
+  if (!trip.hasOwnProperty("stopIndex")) {
+    trip.stopIndex = 0;
+  }
+  return trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
+};
+
 NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
   return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
     .then(this.parseHSLRealTimeData)

@@ -4,6 +4,7 @@ var sinon = require('sinon');
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 chai.should();
+var expect = chai.expect;
 var NetworkHandler = require('../src/NetworkHandler');
 
 describe('NetworkHandler', function() {
@@ -374,4 +375,32 @@ describe('NetworkHandler', function() {
     });
   });
 
+  describe('#getNextStop', function () {
+    var trip;
+
+    beforeEach(function () {
+      trip = JSON.parse(GraphQLResponse).data.fuzzyTrip;
+    });
+
+    it('first call should return first stop', function(){
+      var s = NetworkHandler.getNextStop(trip);
+      s.should.deep.equal(trip.stops[0]);
+    });
+
+    it('second call should return second stop', function(){
+      var s = NetworkHandler.getNextStop(trip);
+      s = NetworkHandler.getNextStop(trip);
+      s.should.deep.equal(trip.stops[1]);
+    });
+
+    it('return null at the end of trip', function(){
+      var s;
+      var j = trip.stops.length;
+      for (var i = 0; i < j; i++) {
+        s = NetworkHandler.getNextStop(trip);
+      }
+      s = NetworkHandler.getNextStop(trip);
+      expect(s).to.be.null;
+    });
+  });
 });
