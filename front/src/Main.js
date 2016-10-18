@@ -32,5 +32,9 @@ window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 window.VISIBLE_FUTURE_STOPS = 4;
 window.DEBUG_MODE = true;
-if (DEBUG_MODE) window.debug = console.log.bind(window.console)
+if (DEBUG_MODE) {
+  window.debug = console.log.bind(window.console);
+  debug.warn = console.warn.bind(window.console);
+  debug.error = console.error.bind(window.console);
+}
 else window.debug = function(){}
