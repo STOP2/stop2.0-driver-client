@@ -8,28 +8,37 @@ The UI class renders the user interface
 
 var UI = function(){}
 
-var NetworkHandler = require('./NetworkHandler');
+UI.prototype.createInitialUI = function() {
+  document.querySelector(".content").innerHTML =
+        `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
+}
+
+// Initialization function
+UI.prototype.init = function() {
+  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
+  var vehicleId = document.getElementById('vehicle-name').value;
+  UI.prototype.createUI();
+  require('./NetworkHandler').getCurrentVehicleData(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+}
 
 UI.prototype.createUI = function() {
   // Create the base HTML
   document.querySelector(".content").innerHTML = `
         <h2>Pysäkit</h2>
-
         <ul class="stop-list"></ul>
-
         <br />
-
         <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
   // Add a listener to the driver button
   document.querySelector(".driver-button").addEventListener("click", function() {
-    NetworkHandler.postDriverButton();
+    require('./NetworkHandler').postDriverButton();
   });
 }
 
 // Setup the header
 UI.prototype.setupHeader = function(trip) {
   if (trip) {
-    UI.prototype.logInfo(); // Selvitä miksei toimi thisillä
+    UI.prototype.logInfo(trip); // Selvitä miksei toimi thisillä
     var tripName = UI.prototype.parseHeadsign(trip);
     var busNumber = UI.prototype.parseBusNumber(trip);
     var startTime = UI.prototype.parseStartTime(trip);
@@ -70,11 +79,11 @@ UI.prototype.parseHeadsign = function(trip) {
 }
 
 // General logging
-UI.prototype.logInfo = function() {
-  debug("Bus tripId: " + currentTrip.gtfsId);
-  debug("Bus direction: " + currentTrip.tripHeadsign);
+UI.prototype.logInfo = function(trip) {
+  debug("Bus tripId: " + trip.gtfsId);
+  debug("Bus direction: " + trip.tripHeadsign);
   debug("Stops:")
-  debug(currentTrip.stops);
+  debug(trip.stops);
 }
 
 // Create the stop elements
@@ -89,31 +98,31 @@ UI.prototype.renderStops = function(trip) {
     s.node = item;
   }
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
-  NetworkHandler.getNextStop(currentTrip);
-  UI.prototype.updateStops();
+  require('./NetworkHandler').getNextStop(trip);
+  UI.prototype.updateStops(trip);
 }
 
 // Update the stop element highlights
-UI.prototype.updateStops = function() {
+UI.prototype.updateStops = function(trip) {
   // First hide the stops that are not supposed to be shown yet
-  for (var s of currentTrip.stops) {
-    UI.prototype.hideOrShowNode(s);
+  for (var s of trip.stops) {
+    UI.prototype.hideOrShowNode(s, trip);
     // Remove unnecessary classes
     UI.prototype.cleanStops(s);
     // Highlight the next stop
-    if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
+    if (trip.stopIndex == trip.stops.indexOf(s)) {
       UI.prototype.highlightNextStop(s);
     }
     // Highlight the previous stop
-    else if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
+    else if (trip.stopIndex == trip.stops.indexOf(s) + 1) {
       UI.prototype.highlightPreviousStop(s);
     }
   }
 }
 
 // Hide or show the stop
-UI.prototype.hideOrShowNode = function(s) {
-  if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
+UI.prototype.hideOrShowNode = function(s, trip) {
+  if (trip.stopIndex - 1 <= trip.stops.indexOf(s) && trip.stopIndex + VISIBLE_FUTURE_STOPS >= trip.stops.indexOf(s)) {
     if (s.node.classList.contains("hidden")) {
       s.node.classList.remove("hidden");
     }
@@ -169,8 +178,8 @@ UI.prototype.cleanStops = function(s) {
 }
 
 // Update the stop element counts
-UI.prototype.updateCounts = function(payload) {
-  for (var s of currentTrip.stops) {
+UI.prototype.updateCounts = function(payload, trip) {
+  for (var s of trip.stops) {
     for (var p of payload) {
       if (s.gtfsId == p.id) {
         // Change the count

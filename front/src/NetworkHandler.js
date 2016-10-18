@@ -8,13 +8,25 @@ NetworkHandler handles all connections to HSL APIs and the backend.
 
 var NetworkHandler = function(){};
 
+var currentTrip;
+
 NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
   // This function calls everything relevant
   return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
     .then(this.parseHSLRealTimeData)
     .then(this.getHSLTripData)
-    .then(this.startListeningToMQTT);
+    .then(this.startListeningToMQTT)
+    .then(this.setCurrentTrip);
 };
+
+NetworkHandler.prototype.setCurrentTrip = function(trip) {
+  currentTrip = trip;
+  return trip;
+}
+
+NetworkHandler.prototype.getCurrentTrip = function() {
+  return currentTrip;
+}
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
   return new Promise(function (resolve, reject) {
@@ -103,7 +115,6 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
         }
         debug("Trip loaded from HSL real time API.")
         debug(newTrip);
-        window.currentTrip = newTrip;
         resolve(newTrip);
       } else {
         // If it fails, reject the promise with a error message
@@ -120,9 +131,15 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
 };
 
 NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+  var mqttClient = require('mqtt').connect("ws://epsilon.fixme.fi:9001");
   // Subscribe to the trip's MQTT channel
   mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+  // React to MQTT messages
+  mqttClient.on("message", function (topic, payload) {
+    debug("MQTT: '" + [topic, payload].join(": ") + "'");
+    require('./UI').updateCounts(JSON.parse(payload).stop_ids, trip);
+  });
+  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
   return trip;
 };
 

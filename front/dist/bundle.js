@@ -46,49 +46,32 @@
 
 	"use strict";
 
-	var NetworkHandler = __webpack_require__(1);
 	var UI = __webpack_require__(2);
-	var mqtt = __webpack_require__(3);
-	var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
-	var vehicleId = -1;
+	var Logger = __webpack_require__(92);
 
-	function init() {
-	  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
-	  vehicleId = document.getElementById('vehicle-name').value;
-	  mqttClient.on("message", function (topic, payload) {
-	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
-	    var stops = JSON.parse(payload).stop_ids;
-	    UI.updateCounts(stops);
-	  });
-	  UI.createUI();
-	  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.setupHeader).then(UI.renderStops);
-	}
-
-	function simulateNextStop() {
-	  NetworkHandler.getNextStop(currentTrip);
-	  UI.updateStops();
-	}
-
-	window.init = init;
-	window.simulateNextStop = simulateNextStop;
-	window.mqttClient = mqttClient;
-	window.currentTrip;
+	// Global constants
 	window.STOP_API = "http://stop20.herokuapp.com"
 	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 	window.VISIBLE_FUTURE_STOPS = 4;
 	window.DEBUG_MODE = true;
-	if (DEBUG_MODE) {
-	  window.debug = console.log.bind(window.console);
-	  debug.warn = console.warn.bind(window.console);
-	  debug.error = console.error.bind(window.console);
+
+	// Initialization
+	UI.createInitialUI();
+	Logger.init();
+
+	// Temp function to "move" to the next stop
+	function simulateNextStop() {
+	  var nh = __webpack_require__(1);
+	  nh.getNextStop(nh.getCurrentTrip());
+	  UI.updateStops(nh.getCurrentTrip());
 	}
-	else window.debug = function(){}
+	window.simulateNextStop = simulateNextStop;
 
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
@@ -100,13 +83,25 @@
 
 	var NetworkHandler = function(){};
 
+	var currentTrip;
+
 	NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
 	  // This function calls everything relevant
 	  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
 	    .then(this.parseHSLRealTimeData)
 	    .then(this.getHSLTripData)
-	    .then(this.startListeningToMQTT);
+	    .then(this.startListeningToMQTT)
+	    .then(this.setCurrentTrip);
 	};
+
+	NetworkHandler.prototype.setCurrentTrip = function(trip) {
+	  currentTrip = trip;
+	  return trip;
+	}
+
+	NetworkHandler.prototype.getCurrentTrip = function() {
+	  return currentTrip;
+	}
 
 	NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
 	  return new Promise(function (resolve, reject) {
@@ -195,7 +190,6 @@
 	        }
 	        debug("Trip loaded from HSL real time API.")
 	        debug(newTrip);
-	        window.currentTrip = newTrip;
 	        resolve(newTrip);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -212,9 +206,15 @@
 	};
 
 	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+	  var mqttClient = __webpack_require__(3).connect("ws://epsilon.fixme.fi:9001");
 	  // Subscribe to the trip's MQTT channel
 	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+	  // React to MQTT messages
+	  mqttClient.on("message", function (topic, payload) {
+	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
+	    __webpack_require__(2).updateCounts(JSON.parse(payload).stop_ids, trip);
+	  });
+	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
 	  return trip;
 	};
 
@@ -255,28 +255,37 @@
 
 	var UI = function(){}
 
-	var NetworkHandler = __webpack_require__(1);
+	UI.prototype.createInitialUI = function() {
+	  document.querySelector(".content").innerHTML =
+	        `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
+	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
+	}
+
+	// Initialization function
+	UI.prototype.init = function() {
+	  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
+	  var vehicleId = document.getElementById('vehicle-name').value;
+	  UI.prototype.createUI();
+	  __webpack_require__(1).getCurrentVehicleData(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+	}
 
 	UI.prototype.createUI = function() {
 	  // Create the base HTML
 	  document.querySelector(".content").innerHTML = `
 	        <h2>Pysäkit</h2>
-
 	        <ul class="stop-list"></ul>
-
 	        <br />
-
 	        <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
 	  // Add a listener to the driver button
 	  document.querySelector(".driver-button").addEventListener("click", function() {
-	    NetworkHandler.postDriverButton();
+	    __webpack_require__(1).postDriverButton();
 	  });
 	}
 
 	// Setup the header
 	UI.prototype.setupHeader = function(trip) {
 	  if (trip) {
-	    UI.prototype.logInfo(); // Selvitä miksei toimi thisillä
+	    UI.prototype.logInfo(trip); // Selvitä miksei toimi thisillä
 	    var tripName = UI.prototype.parseHeadsign(trip);
 	    var busNumber = UI.prototype.parseBusNumber(trip);
 	    var startTime = UI.prototype.parseStartTime(trip);
@@ -317,11 +326,11 @@
 	}
 
 	// General logging
-	UI.prototype.logInfo = function() {
-	  debug("Bus tripId: " + currentTrip.gtfsId);
-	  debug("Bus direction: " + currentTrip.tripHeadsign);
+	UI.prototype.logInfo = function(trip) {
+	  debug("Bus tripId: " + trip.gtfsId);
+	  debug("Bus direction: " + trip.tripHeadsign);
 	  debug("Stops:")
-	  debug(currentTrip.stops);
+	  debug(trip.stops);
 	}
 
 	// Create the stop elements
@@ -336,31 +345,31 @@
 	    s.node = item;
 	  }
 	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
-	  NetworkHandler.getNextStop(currentTrip);
-	  UI.prototype.updateStops();
+	  __webpack_require__(1).getNextStop(trip);
+	  UI.prototype.updateStops(trip);
 	}
 
 	// Update the stop element highlights
-	UI.prototype.updateStops = function() {
+	UI.prototype.updateStops = function(trip) {
 	  // First hide the stops that are not supposed to be shown yet
-	  for (var s of currentTrip.stops) {
-	    UI.prototype.hideOrShowNode(s);
+	  for (var s of trip.stops) {
+	    UI.prototype.hideOrShowNode(s, trip);
 	    // Remove unnecessary classes
 	    UI.prototype.cleanStops(s);
 	    // Highlight the next stop
-	    if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
+	    if (trip.stopIndex == trip.stops.indexOf(s)) {
 	      UI.prototype.highlightNextStop(s);
 	    }
 	    // Highlight the previous stop
-	    else if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
+	    else if (trip.stopIndex == trip.stops.indexOf(s) + 1) {
 	      UI.prototype.highlightPreviousStop(s);
 	    }
 	  }
 	}
 
 	// Hide or show the stop
-	UI.prototype.hideOrShowNode = function(s) {
-	  if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
+	UI.prototype.hideOrShowNode = function(s, trip) {
+	  if (trip.stopIndex - 1 <= trip.stops.indexOf(s) && trip.stopIndex + VISIBLE_FUTURE_STOPS >= trip.stops.indexOf(s)) {
 	    if (s.node.classList.contains("hidden")) {
 	      s.node.classList.remove("hidden");
 	    }
@@ -416,8 +425,8 @@
 	}
 
 	// Update the stop element counts
-	UI.prototype.updateCounts = function(payload) {
-	  for (var s of currentTrip.stops) {
+	UI.prototype.updateCounts = function(payload, trip) {
+	  for (var s of trip.stops) {
 	    for (var p of payload) {
 	      if (s.gtfsId == p.id) {
 	        // Change the count
@@ -16639,6 +16648,33 @@
 	}
 
 	module.exports = ws
+
+
+/***/ },
+/* 92 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	/*
+
+	Debug logger - replacement for console.log
+
+	*/
+
+	var Logger = function(){};
+
+	// Setup the debug function
+	Logger.prototype.init = function() {
+	  if (DEBUG_MODE) {
+	    window.debug = console.log.bind(window.console);
+	    debug.warn = console.warn.bind(window.console);
+	    debug.error = console.error.bind(window.console);
+	  }
+	  else window.debug = function(){}
+	}
+
+	module.exports = new Logger();
 
 
 /***/ }
