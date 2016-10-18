@@ -98,51 +98,72 @@ UI.prototype.renderStops = function(trip) {
 UI.prototype.updateStops = function() {
   // First hide the stops that are not supposed to be shown yet
   for (var s of currentTrip.stops) {
-    if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
-      if (s.node.classList.contains("hidden")) {
-        s.node.classList.remove("hidden");
-      }
-    } else {
-      if (!s.node.classList.contains("hidden")) {
-        s.node.classList.add("hidden");
-      }
-    }
+    UI.prototype.hideOrShowNode(s);
+    // Remove unnecessary classes
+    UI.prototype.cleanClasses(s);
     // Highlight the next stop
     if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
-      for (var n of s.node.childNodes) {
-        if (n.classList.contains("current-stop-marker")) {
-          if (!n.classList.contains("current")) {
-            n.classList.add("current");
-            n.innerHTML = 'SEURAAVA';
-            s.node.classList.add("current");
-          }
-        }
+      UI.prototype.highlightNextStop(s);
+    }
+    // Highlight the previous stop
+    else if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
+      UI.prototype.highlightPreviousStop(s);
+    }
+  }
+}
+
+// Hide or show the stop
+UI.prototype.hideOrShowNode = function(s) {
+  if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
+    if (s.node.classList.contains("hidden")) {
+      s.node.classList.remove("hidden");
+    }
+  } else {
+    if (!s.node.classList.contains("hidden")) {
+      s.node.classList.add("hidden");
+    }
+  }
+}
+
+// Highlight the next stop
+UI.prototype.highlightNextStop = function(s) {
+  for (var n of s.node.childNodes) {
+    if (n.classList.contains("current-stop-marker")) {
+      if (!n.classList.contains("current")) {
+        n.classList.add("current");
+        n.innerHTML = 'SEURAAVA';
+        s.node.classList.add("current");
       }
-    } else {
-      // Remove unnecessary classes
-      for (var n of s.node.childNodes) {
-        if (n.classList.contains("current-stop-marker")) {
-          if (n.classList.contains("current")) {
-            n.classList.remove("current");
-            n.innerHTML = '';
-            s.node.classList.remove("current");
-          }
-          if (n.classList.contains("previous")) {
-            n.classList.remove("previous");
-            n.innerHTML = '';
-            s.node.classList.remove("previous");
-          }
-        }
-        // Highlight the previous stop
-        if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
-          if (n.classList.contains("current-stop-marker")) {
-            if (!n.classList.contains("previous")) {
-              n.classList.add("previous");
-              n.innerHTML = 'EDELLINEN';
-              s.node.classList.add("previous");
-            }
-          }
-        }
+    }
+  }
+}
+
+// Highlight the previous stop
+UI.prototype.highlightPreviousStop = function(s) {
+  for (var n of s.node.childNodes) {
+    if (n.classList.contains("current-stop-marker")) {
+      if (!n.classList.contains("previous")) {
+        n.classList.add("previous");
+        n.innerHTML = 'EDELLINEN';
+        s.node.classList.add("previous");
+      }
+    }
+  }
+}
+
+// Clean the marker classes from the selected node
+UI.prototype.cleanClasses = function(s) {
+  for (var n of s.node.childNodes) {
+    if (n.classList.contains("current-stop-marker")) {
+      if (n.classList.contains("current")) {
+        n.classList.remove("current");
+        n.innerHTML = '';
+        s.node.classList.remove("current");
+      }
+      if (n.classList.contains("previous")) {
+        n.classList.remove("previous");
+        n.innerHTML = '';
+        s.node.classList.remove("previous");
       }
     }
   }
