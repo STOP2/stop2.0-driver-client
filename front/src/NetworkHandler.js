@@ -123,7 +123,7 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip) {
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();
   xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-  xhttp.send(); //TODO: Oikeat datat tämän sisään.
+  xhttp.send('{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stopIndex + '"}'); //TODO: Oikeat datat tämän sisään.
 };
 
 module.exports = new NetworkHandler();

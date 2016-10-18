@@ -207,7 +207,7 @@
 	NetworkHandler.prototype.postDriverButton = function() {
 	  var xhttp = new XMLHttpRequest();
 	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-	  xhttp.send(); //TODO: Oikeat datat tämän sisään.
+	  xhttp.send('{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stopIndex + '"}'); //TODO: Oikeat datat tämän sisään.
 	};
 
 	module.exports = new NetworkHandler();
@@ -274,7 +274,7 @@
 	}
 
 	UI.prototype.updateStops = function(payload) {
-	  for (var s of stops.reverse()) {
+	  for (var s of stops) {
 	    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= stops.indexOf(s)) {
 	      if (s.node.classList.contains("hidden")) {
 	        s.node.classList.remove("hidden");
@@ -320,7 +320,7 @@
 	      }
 	    }
 	  }
-	  for (var s of stops.reverse()) {
+	  for (var s of stops) {
 	    for (var p of payload) {
 	      if (s.gtfsId == p.id) {
 	        var origCount = s.count;
