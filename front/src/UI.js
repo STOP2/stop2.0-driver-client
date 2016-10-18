@@ -1,7 +1,6 @@
 "use strict";
 
 var UI = function(){}
-var stops = [];
 var stopList;
 
 var NetworkHandler = require('./NetworkHandler');
@@ -34,10 +33,17 @@ UI.prototype.renderUI = function(trip) {
     if (minutes < 10) {
       minutes = "0" + minutes;
     }
-    console.log("Suunta: " + trip.tripHeadsign);
-    document.querySelector("h2").innerHTML = trip.route.longName + " (" + trip.gtfsId + ", " + "suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
+    UI.prototype.logInfo();
+    document.querySelector("h2").innerHTML = trip.route.longName + " (suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
     UI.prototype.renderStops(trip); //TODO: Selvitä miksi tämä ei toimi thisillä
   }
+}
+
+UI.prototype.logInfo = function() {
+  console.log("Bus tripId: " + currentTrip.gtfsId);
+  console.log("Bus direction: " + currentTrip.tripHeadsign);
+  console.log("Stops:")
+  console.log(currentTrip.stops);
 }
 
 UI.prototype.renderStops = function(trip) {
@@ -48,15 +54,15 @@ UI.prototype.renderStops = function(trip) {
     item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
     stopList.appendChild(item);
     s.node = item;
-    stops.push(s);
   }
+  console.log ("*** STOP 2.0 FINISHED LOADING ***")
   NetworkHandler.getNextStop(currentTrip);
   UI.prototype.updateStops([]);
 }
 
 UI.prototype.updateStops = function(payload) {
-  for (var s of stops) {
-    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= stops.indexOf(s)) {
+  for (var s of currentTrip.stops) {
+    if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
       if (s.node.classList.contains("hidden")) {
         s.node.classList.remove("hidden");
       }
@@ -65,7 +71,7 @@ UI.prototype.updateStops = function(payload) {
         s.node.classList.add("hidden");
       }
     }
-    if (currentTrip.stopIndex == stops.indexOf(s)) {
+    if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
       for (var n of s.node.childNodes) {
         if (n.classList.contains("current-stop-marker")) {
           if (!n.classList.contains("current")) {
@@ -89,7 +95,7 @@ UI.prototype.updateStops = function(payload) {
             s.node.classList.remove("previous");
           }
         }
-        if (currentTrip.stopIndex == stops.indexOf(s) + 1) {
+        if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
           if (n.classList.contains("current-stop-marker")) {
             if (!n.classList.contains("previous")) {
               n.classList.add("previous");
@@ -101,7 +107,7 @@ UI.prototype.updateStops = function(payload) {
       }
     }
   }
-  for (var s of stops) {
+  for (var s of currentTrip.stops) {
     for (var p of payload) {
       if (s.gtfsId == p.id) {
         var origCount = s.count;

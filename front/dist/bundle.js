@@ -53,9 +53,10 @@
 	var vehicleId = -1;
 
 	function init() {
+	  console.log("*** STOP 2.0 ***")
 	  vehicleId = document.getElementById('vehicle-name').value;
 	  mqttClient.on("message", function (topic, payload) {
-	    console.log([topic, payload].join(": "));
+	    console.log("MQTT: '" + [topic, payload].join(": ") + "'");
 	    var stops = JSON.parse(payload).stop_ids;
 	    UI.updateStops(stops);
 	  });
@@ -96,6 +97,8 @@
 	          throw new Error("Error in HSL API: No data returned.");
 	        }
 	        // If successful, resolve the promise by passing back the request response
+	        console.log("Data loaded from HSL API.")
+	        console.log(JSON.parse(req.responseText));
 	        resolve(req.responseText);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -169,6 +172,8 @@
 	            newTrip[prop] = tripData[prop];
 	          }
 	        }
+	        console.log("Trip loaded from HSL real time API.")
+	        console.log(newTrip);
 	        resolve(newTrip);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -188,7 +193,10 @@
 	  if (!trip.hasOwnProperty("stopIndex")) {
 	    trip.stopIndex = 0;
 	  }
-	  return trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
+	  var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
+	  console.log("Moving to next stop. Stop:");
+	  console.log(stop);
+	  return stop;
 	};
 
 	NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
@@ -199,7 +207,7 @@
 	};
 
 	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-	  console.log('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+	  console.log('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
 	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
 	  return trip;
 	};
@@ -207,7 +215,9 @@
 	NetworkHandler.prototype.postDriverButton = function() {
 	  var xhttp = new XMLHttpRequest();
 	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-	  xhttp.send('{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stopIndex + '"}'); //TODO: Oikeat datat tämän sisään.
+	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex].gtfsId + '"}';
+	  xhttp.send(msg);
+	  console.log("Sent message to backend: " + msg);
 	};
 
 	module.exports = new NetworkHandler();
@@ -220,7 +230,6 @@
 	"use strict";
 
 	var UI = function(){}
-	var stops = [];
 	var stopList;
 
 	var NetworkHandler = __webpack_require__(1);
@@ -253,10 +262,17 @@
 	    if (minutes < 10) {
 	      minutes = "0" + minutes;
 	    }
-	    console.log("Suunta: " + trip.tripHeadsign);
-	    document.querySelector("h2").innerHTML = trip.route.longName + " (" + trip.gtfsId + ", " + "suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
+	    UI.prototype.logInfo();
+	    document.querySelector("h2").innerHTML = trip.route.longName + " (suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
 	    UI.prototype.renderStops(trip); //TODO: Selvitä miksi tämä ei toimi thisillä
 	  }
+	}
+
+	UI.prototype.logInfo = function() {
+	  console.log("Bus tripId: " + currentTrip.gtfsId);
+	  console.log("Bus direction: " + currentTrip.tripHeadsign);
+	  console.log("Stops:")
+	  console.log(currentTrip.stops);
 	}
 
 	UI.prototype.renderStops = function(trip) {
@@ -267,15 +283,15 @@
 	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	    stopList.appendChild(item);
 	    s.node = item;
-	    stops.push(s);
 	  }
+	  console.log ("*** STOP 2.0 FINISHED LOADING ***")
 	  NetworkHandler.getNextStop(currentTrip);
 	  UI.prototype.updateStops([]);
 	}
 
 	UI.prototype.updateStops = function(payload) {
-	  for (var s of stops) {
-	    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= stops.indexOf(s)) {
+	  for (var s of currentTrip.stops) {
+	    if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
 	      if (s.node.classList.contains("hidden")) {
 	        s.node.classList.remove("hidden");
 	      }
@@ -284,7 +300,7 @@
 	        s.node.classList.add("hidden");
 	      }
 	    }
-	    if (currentTrip.stopIndex == stops.indexOf(s)) {
+	    if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
 	      for (var n of s.node.childNodes) {
 	        if (n.classList.contains("current-stop-marker")) {
 	          if (!n.classList.contains("current")) {
@@ -308,7 +324,7 @@
 	            s.node.classList.remove("previous");
 	          }
 	        }
-	        if (currentTrip.stopIndex == stops.indexOf(s) + 1) {
+	        if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
 	          if (n.classList.contains("current-stop-marker")) {
 	            if (!n.classList.contains("previous")) {
 	              n.classList.add("previous");
@@ -320,7 +336,7 @@
 	      }
 	    }
 	  }
-	  for (var s of stops) {
+	  for (var s of currentTrip.stops) {
 	    for (var p of payload) {
 	      if (s.gtfsId == p.id) {
 	        var origCount = s.count;

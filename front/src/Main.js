@@ -7,9 +7,10 @@ var mqttClient = mqtt.connect("ws://epsilon.fixme.fi:9001");
 var vehicleId = -1;
 
 function init() {
+  console.log("*** STOP 2.0 ***")
   vehicleId = document.getElementById('vehicle-name').value;
   mqttClient.on("message", function (topic, payload) {
-    console.log([topic, payload].join(": "));
+    console.log("MQTT: '" + [topic, payload].join(": ") + "'");
     var stops = JSON.parse(payload).stop_ids;
     UI.updateStops(stops);
   });
