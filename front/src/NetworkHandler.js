@@ -1,6 +1,20 @@
 "use strict";
 
+/*
+
+NetworkHandler handles all connections to HSL APIs and the backend.
+
+*/
+
 var NetworkHandler = function(){};
+
+NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
+  // This function calls everything relevant
+  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
+    .then(this.parseHSLRealTimeData)
+    .then(this.getHSLTripData)
+    .then(this.startListeningToMQTT);
+};
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
   return new Promise(function (resolve, reject) {
@@ -89,6 +103,7 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
         }
         debug("Trip loaded from HSL real time API.")
         debug(newTrip);
+        window.currentTrip = newTrip;
         resolve(newTrip);
       } else {
         // If it fails, reject the promise with a error message
@@ -104,33 +119,29 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
   });
 };
 
+NetworkHandler.prototype.startListeningToMQTT = function(trip) {
+  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+  // Subscribe to the trip's MQTT channel
+  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+  return trip;
+};
+
 NetworkHandler.prototype.getNextStop = function(trip) {
   if (!trip.hasOwnProperty("stopIndex")) {
     trip.stopIndex = 0;
   }
+  // Increment the stop index by 1 and return the corresponding stop
   var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
   debug("Moving to next stop. Stop:");
   debug(stop);
   return stop;
 };
 
-NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
-  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
-    .then(this.parseHSLRealTimeData)
-    .then(this.getHSLTripData)
-    .then(this.startListeningToMQTT);
-};
-
-NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
-  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
-  return trip;
-};
-
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();
   xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex].gtfsId + '"}';
+  // Send the last stop's id and the trip's id to backend
+  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex-1].gtfsId + '"}';
   xhttp.send(msg);
   debug("Sent message to backend: " + msg);
 };

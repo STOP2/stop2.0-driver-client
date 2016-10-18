@@ -58,15 +58,15 @@
 	  mqttClient.on("message", function (topic, payload) {
 	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
 	    var stops = JSON.parse(payload).stop_ids;
-	    UI.updateStops(stops);
+	    UI.updateCounts(stops);
 	  });
 	  UI.createUI();
-	  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.renderUI);
+	  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.setupHeader).then(UI.renderStops);
 	}
 
 	function simulateNextStop() {
 	  NetworkHandler.getNextStop(currentTrip);
-	  UI.updateStops([]);
+	  UI.updateStops();
 	}
 
 	window.init = init;
@@ -92,7 +92,21 @@
 
 	"use strict";
 
+	/*
+
+	NetworkHandler handles all connections to HSL APIs and the backend.
+
+	*/
+
 	var NetworkHandler = function(){};
+
+	NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
+	  // This function calls everything relevant
+	  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
+	    .then(this.parseHSLRealTimeData)
+	    .then(this.getHSLTripData)
+	    .then(this.startListeningToMQTT);
+	};
 
 	NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
 	  return new Promise(function (resolve, reject) {
@@ -181,6 +195,7 @@
 	        }
 	        debug("Trip loaded from HSL real time API.")
 	        debug(newTrip);
+	        window.currentTrip = newTrip;
 	        resolve(newTrip);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -196,33 +211,29 @@
 	  });
 	};
 
+	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
+	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+	  // Subscribe to the trip's MQTT channel
+	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+	  return trip;
+	};
+
 	NetworkHandler.prototype.getNextStop = function(trip) {
 	  if (!trip.hasOwnProperty("stopIndex")) {
 	    trip.stopIndex = 0;
 	  }
+	  // Increment the stop index by 1 and return the corresponding stop
 	  var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
 	  debug("Moving to next stop. Stop:");
 	  debug(stop);
 	  return stop;
 	};
 
-	NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
-	  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
-	    .then(this.parseHSLRealTimeData)
-	    .then(this.getHSLTripData)
-	    .then(this.startListeningToMQTT);
-	};
-
-	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
-	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
-	  return trip;
-	};
-
 	NetworkHandler.prototype.postDriverButton = function() {
 	  var xhttp = new XMLHttpRequest();
 	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex].gtfsId + '"}';
+	  // Send the last stop's id and the trip's id to backend
+	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex-1].gtfsId + '"}';
 	  xhttp.send(msg);
 	  debug("Sent message to backend: " + msg);
 	};
@@ -236,12 +247,18 @@
 
 	"use strict";
 
+	/*
+
+	The UI class renders the user interface
+
+	*/
+
 	var UI = function(){}
-	var stopList;
 
 	var NetworkHandler = __webpack_require__(1);
 
 	UI.prototype.createUI = function() {
+	  // Create the base HTML
 	  document.querySelector(".content").innerHTML = `
 	        <h2>Pysäkit</h2>
 
@@ -250,37 +267,46 @@
 	        <br />
 
 	        <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
+	  // Add a listener to the driver button
 	  var driverButton = document.querySelector(".driver-button");
 	  driverButton.addEventListener("click", function() {
 	    NetworkHandler.postDriverButton();
 	  });
-	  stopList = document.querySelector(".stop-list");
 	}
 
-	UI.prototype.renderUI = function(trip) {
-	  window.currentTrip = trip;
+	// Setup the header
+	UI.prototype.setupHeader = function(trip) {
 	  if (trip) {
-	    var t = trip.start / 60;
-	    var hours = Math.floor(t / 60)
-	    if (hours < 10) {
-	      hours = "0" + hours;
-	    }
-	    var minutes = (t % 60);
-	    if (minutes < 10) {
-	      minutes = "0" + minutes;
-	    }
-	    UI.prototype.logInfo();
+	    UI.prototype.logInfo(); // Selvitä miksei toimi thisillä
 	    var tripName = UI.prototype.parseHeadsign(trip);
 	    var busNumber = UI.prototype.parseBusNumber(trip);
-	    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + hours + ":" + minutes;
-	    UI.prototype.renderStops(trip); //TODO: Selvitä miksi tämä ei toimi thisillä
+	    var startTime = UI.prototype.parseStartTime(trip);
+	    // Set the header
+	    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + startTime;
 	  }
+	  return trip;
 	}
 
+	// Parse bus start time
+	UI.prototype.parseStartTime = function(trip) {
+	  var t = trip.start / 60;
+	  var hours = Math.floor(t / 60)
+	  if (hours < 10) {
+	    hours = "0" + hours;
+	  }
+	  var minutes = (t % 60);
+	  if (minutes < 10) {
+	    minutes = "0" + minutes;
+	  }
+	  return hours + ":" + minutes
+	}
+
+	// Parse the bus number
 	UI.prototype.parseBusNumber = function(trip) {
 	  return parseInt(trip.line.split(":")[1].substring(1));
 	}
 
+	// Parse the bus's start and end locations and add them together
 	UI.prototype.parseHeadsign = function(trip) {
 	  var tripLeft = trip.route.longName.split(" - ")[0];
 	  var tripRight = trip.route.longName.split(" - ")[1];
@@ -291,6 +317,7 @@
 	  return tripLeft + " - " + tripRight;
 	}
 
+	// General logging
 	UI.prototype.logInfo = function() {
 	  debug("Bus tripId: " + currentTrip.gtfsId);
 	  debug("Bus direction: " + currentTrip.tripHeadsign);
@@ -298,7 +325,9 @@
 	  debug(currentTrip.stops);
 	}
 
+	// Create the stop elements
 	UI.prototype.renderStops = function(trip) {
+	  var stopList = document.querySelector(".stop-list");
 	  for (var s of trip.stops) {
 	    s.count = 0;
 	    var item = document.createElement("li");
@@ -309,10 +338,12 @@
 	  }
 	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
 	  NetworkHandler.getNextStop(currentTrip);
-	  UI.prototype.updateStops([]);
+	  UI.prototype.updateStops();
 	}
 
-	UI.prototype.updateStops = function(payload) {
+	// Update the stop element highlights
+	UI.prototype.updateStops = function() {
+	  // First hide the stops that are not supposed to be shown yet
 	  for (var s of currentTrip.stops) {
 	    if (currentTrip.stopIndex - 1 <= currentTrip.stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= currentTrip.stops.indexOf(s)) {
 	      if (s.node.classList.contains("hidden")) {
@@ -323,6 +354,7 @@
 	        s.node.classList.add("hidden");
 	      }
 	    }
+	    // Highlight the next stop
 	    if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
 	      for (var n of s.node.childNodes) {
 	        if (n.classList.contains("current-stop-marker")) {
@@ -334,6 +366,7 @@
 	        }
 	      }
 	    } else {
+	      // Remove unnecessary classes
 	      for (var n of s.node.childNodes) {
 	        if (n.classList.contains("current-stop-marker")) {
 	          if (n.classList.contains("current")) {
@@ -347,6 +380,7 @@
 	            s.node.classList.remove("previous");
 	          }
 	        }
+	        // Highlight the previous stop
 	        if (currentTrip.stopIndex == currentTrip.stops.indexOf(s) + 1) {
 	          if (n.classList.contains("current-stop-marker")) {
 	            if (!n.classList.contains("previous")) {
@@ -359,11 +393,17 @@
 	      }
 	    }
 	  }
+	}
+
+	// Update the stop element counts
+	UI.prototype.updateCounts = function(payload) {
 	  for (var s of currentTrip.stops) {
 	    for (var p of payload) {
 	      if (s.gtfsId == p.id) {
+	        // Change the count
 	        var origCount = s.count;
 	        s.count = p.passengers;
+	        // If the count changed, play the highlight effect and add the correct classes
 	        if (origCount != s.count) {
 	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	          for (var n of s.node.childNodes) {

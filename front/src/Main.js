@@ -12,15 +12,15 @@ function init() {
   mqttClient.on("message", function (topic, payload) {
     debug("MQTT: '" + [topic, payload].join(": ") + "'");
     var stops = JSON.parse(payload).stop_ids;
-    UI.updateStops(stops);
+    UI.updateCounts(stops);
   });
   UI.createUI();
-  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.renderUI);
+  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.setupHeader).then(UI.renderStops);
 }
 
 function simulateNextStop() {
   NetworkHandler.getNextStop(currentTrip);
-  UI.updateStops([]);
+  UI.updateStops();
 }
 
 window.init = init;
