@@ -53,10 +53,10 @@
 	var vehicleId = -1;
 
 	function init() {
-	  console.log("*** STOP 2.0 ***")
+	  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
 	  vehicleId = document.getElementById('vehicle-name').value;
 	  mqttClient.on("message", function (topic, payload) {
-	    console.log("MQTT: '" + [topic, payload].join(": ") + "'");
+	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
 	    var stops = JSON.parse(payload).stop_ids;
 	    UI.updateStops(stops);
 	  });
@@ -71,12 +71,15 @@
 
 	window.init = init;
 	window.simulateNextStop = simulateNextStop;
+	window.mqttClient = mqttClient;
+	window.currentTrip;
 	window.STOP_API = "http://stop20.herokuapp.com"
 	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 	window.VISIBLE_FUTURE_STOPS = 4;
-	window.mqttClient = mqttClient;
-	window.currentTrip;
+	window.DEBUG_MODE = true;
+	if (DEBUG_MODE) window.debug = console.log.bind(window.console)
+	else window.debug = function(){}
 
 
 /***/ },
@@ -96,9 +99,9 @@
 	        if (req.responseText === '{}') {
 	          throw new Error("Error in HSL API: No data returned.");
 	        }
+	        debug("Data loaded from HSL API.")
+	        debug(JSON.parse(req.responseText));
 	        // If successful, resolve the promise by passing back the request response
-	        console.log("Data loaded from HSL API.")
-	        console.log(JSON.parse(req.responseText));
 	        resolve(req.responseText);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -172,8 +175,8 @@
 	            newTrip[prop] = tripData[prop];
 	          }
 	        }
-	        console.log("Trip loaded from HSL real time API.")
-	        console.log(newTrip);
+	        debug("Trip loaded from HSL real time API.")
+	        debug(newTrip);
 	        resolve(newTrip);
 	      } else {
 	        // If it fails, reject the promise with a error message
@@ -194,8 +197,8 @@
 	    trip.stopIndex = 0;
 	  }
 	  var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
-	  console.log("Moving to next stop. Stop:");
-	  console.log(stop);
+	  debug("Moving to next stop. Stop:");
+	  debug(stop);
 	  return stop;
 	};
 
@@ -207,7 +210,7 @@
 	};
 
 	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-	  console.log('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
 	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
 	  return trip;
 	};
@@ -217,7 +220,7 @@
 	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
 	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex].gtfsId + '"}';
 	  xhttp.send(msg);
-	  console.log("Sent message to backend: " + msg);
+	  debug("Sent message to backend: " + msg);
 	};
 
 	module.exports = new NetworkHandler();
@@ -285,10 +288,10 @@
 	}
 
 	UI.prototype.logInfo = function() {
-	  console.log("Bus tripId: " + currentTrip.gtfsId);
-	  console.log("Bus direction: " + currentTrip.tripHeadsign);
-	  console.log("Stops:")
-	  console.log(currentTrip.stops);
+	  debug("Bus tripId: " + currentTrip.gtfsId);
+	  debug("Bus direction: " + currentTrip.tripHeadsign);
+	  debug("Stops:")
+	  debug(currentTrip.stops);
 	}
 
 	UI.prototype.renderStops = function(trip) {
@@ -300,7 +303,7 @@
 	    stopList.appendChild(item);
 	    s.node = item;
 	  }
-	  console.log ("*** STOP 2.0 FINISHED LOADING ***")
+	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
 	  NetworkHandler.getNextStop(currentTrip);
 	  UI.prototype.updateStops([]);
 	}

@@ -11,9 +11,9 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
         if (req.responseText === '{}') {
           throw new Error("Error in HSL API: No data returned.");
         }
+        debug("Data loaded from HSL API.")
+        debug(JSON.parse(req.responseText));
         // If successful, resolve the promise by passing back the request response
-        console.log("Data loaded from HSL API.")
-        console.log(JSON.parse(req.responseText));
         resolve(req.responseText);
       } else {
         // If it fails, reject the promise with a error message
@@ -87,8 +87,8 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
             newTrip[prop] = tripData[prop];
           }
         }
-        console.log("Trip loaded from HSL real time API.")
-        console.log(newTrip);
+        debug("Trip loaded from HSL real time API.")
+        debug(newTrip);
         resolve(newTrip);
       } else {
         // If it fails, reject the promise with a error message
@@ -109,8 +109,8 @@ NetworkHandler.prototype.getNextStop = function(trip) {
     trip.stopIndex = 0;
   }
   var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
-  console.log("Moving to next stop. Stop:");
-  console.log(stop);
+  debug("Moving to next stop. Stop:");
+  debug(stop);
   return stop;
 };
 
@@ -122,7 +122,7 @@ NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
 };
 
 NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-  console.log('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
   mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
   return trip;
 };
@@ -132,7 +132,7 @@ NetworkHandler.prototype.postDriverButton = function() {
   xhttp.open("POST", STOP_API + "/stoprequests/report", true);
   var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex].gtfsId + '"}';
   xhttp.send(msg);
-  console.log("Sent message to backend: " + msg);
+  debug("Sent message to backend: " + msg);
 };
 
 module.exports = new NetworkHandler();

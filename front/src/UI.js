@@ -56,10 +56,10 @@ UI.prototype.parseHeadsign = function(trip) {
 }
 
 UI.prototype.logInfo = function() {
-  console.log("Bus tripId: " + currentTrip.gtfsId);
-  console.log("Bus direction: " + currentTrip.tripHeadsign);
-  console.log("Stops:")
-  console.log(currentTrip.stops);
+  debug("Bus tripId: " + currentTrip.gtfsId);
+  debug("Bus direction: " + currentTrip.tripHeadsign);
+  debug("Stops:")
+  debug(currentTrip.stops);
 }
 
 UI.prototype.renderStops = function(trip) {
@@ -71,7 +71,7 @@ UI.prototype.renderStops = function(trip) {
     stopList.appendChild(item);
     s.node = item;
   }
-  console.log ("*** STOP 2.0 FINISHED LOADING ***")
+  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
   NetworkHandler.getNextStop(currentTrip);
   UI.prototype.updateStops([]);
 }
