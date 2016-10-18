@@ -53,6 +53,10 @@ br {
   animation: highlight 1s;
 }
 
+.hidden {
+  display: none;
+}
+
 @keyframes highlight {
   0% {
     background: red
@@ -69,14 +73,33 @@ ul {
 }
 
 li {
-  padding: 0.5rem;
-  margin: 4px;
-}
-
-li:nth-child(odd) {
-  background-color: #dddddc;
+  padding: 0.7rem;
+  border-top: solid 1px #dddddc;
+  border-bottom: solid 1px #dddddc;
 }
 
 .number {
   float: right;
+}
+
+.current-stop-marker.current {
+	background: #F092CD;
+}
+
+.current-stop-marker.previous {
+  background: #BEE4F8;
+}
+
+.current-stop-marker {
+  color: #FFFFFF;
+  padding: 0.1em;
+  margin-right: 0.8rem;
+	-moz-border-radius: 0.5rem;
+	-webkit-border-radius: 0.5rem;
+	border-radius: 0.5rem;
+}
+
+.current {
+  font-size: 22pt;
+  background-color: #F4DEEA;
 }

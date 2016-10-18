@@ -14,10 +14,16 @@ function init() {
     UI.updateStops(stops);
   });
   UI.createUI();
-  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.renderStops);
+  NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.renderUI);
+}
+
+function simulateNextStop() {
+  NetworkHandler.getNextStop(currentTrip);
+  UI.updateStops([]);
 }
 
 window.init = init;
+window.simulateNextStop = simulateNextStop;
 window.STOP_API = "http://stop20.herokuapp.com"
 window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";

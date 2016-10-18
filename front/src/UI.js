@@ -1,6 +1,6 @@
 "use strict";
 
-var UI = function() {}
+var UI = function(){}
 var stops = [];
 var stopList;
 
@@ -22,9 +22,7 @@ UI.prototype.createUI = function() {
   stopList = document.querySelector(".stop-list");
 }
 
-UI.prototype.renderStops = function(trip) {
-  console.log("Trip:");
-  console.log(trip);
+UI.prototype.renderUI = function(trip) {
   window.currentTrip = trip;
   if (trip) {
     var t = trip.start / 60;
@@ -36,29 +34,81 @@ UI.prototype.renderStops = function(trip) {
     if (minutes < 10) {
       minutes = "0" + minutes;
     }
-    console.log(trip.tripHeadsign);
+    console.log("Suunta: " + trip.tripHeadsign);
     document.querySelector("h2").innerHTML = trip.route.longName + " (" + trip.gtfsId + ", " + "suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
-    for (var s of trip.stops) {
-      s.count = 0;
-      var item = document.createElement("li");
-      item.classList.add("stop-" + s.code);
-      item.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
-      stopList.appendChild(item);
-      s.node = item;
-      stops.push(s);
-    }
+    UI.prototype.renderStops(trip); //TODO: Selvitä miksi tämä ei toimi thisillä
   }
 }
 
+UI.prototype.renderStops = function(trip) {
+  for (var s of trip.stops) {
+    s.count = 0;
+    var item = document.createElement("li");
+    item.classList.add("stop-" + s.code);
+    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
+    stopList.appendChild(item);
+    s.node = item;
+    stops.push(s);
+  }
+  NetworkHandler.getNextStop(currentTrip);
+  UI.prototype.updateStops([]);
+}
+
 UI.prototype.updateStops = function(payload) {
-  for (var s of stops) {
+  for (var s of stops.reverse()) {
+    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + 3 >= stops.indexOf(s)) {
+      if (s.node.classList.contains("hidden")) {
+        s.node.classList.remove("hidden");
+      }
+    } else {
+      if (!s.node.classList.contains("hidden")) {
+        s.node.classList.add("hidden");
+      }
+    }
+    if (currentTrip.stopIndex == stops.indexOf(s)) {
+      for (var n of s.node.childNodes) {
+        if (n.classList.contains("current-stop-marker")) {
+          if (!n.classList.contains("current")) {
+            n.classList.add("current");
+            n.innerHTML = 'SEURAAVA';
+            s.node.classList.add("current");
+          }
+        }
+      }
+    } else {
+      for (var n of s.node.childNodes) {
+        if (n.classList.contains("current-stop-marker")) {
+          if (n.classList.contains("current")) {
+            n.classList.remove("current");
+            n.innerHTML = '';
+            s.node.classList.remove("current");
+          }
+          if (n.classList.contains("previous")) {
+            n.classList.remove("previous");
+            n.innerHTML = '';
+            s.node.classList.remove("previous");
+          }
+        }
+        if (currentTrip.stopIndex == stops.indexOf(s) + 1) {
+          if (n.classList.contains("current-stop-marker")) {
+            if (!n.classList.contains("previous")) {
+              n.classList.add("previous");
+              n.innerHTML = 'EDELLINEN';
+              s.node.classList.add("previous");
+            }
+          }
+        }
+      }
+    }
+  }
+  for (var s of stops.reverse()) {
     for (var p of payload) {
       if (s.gtfsId == p.id) {
         var origCount = s.count;
         s.count = p.passengers;
         if (origCount != s.count) {
           var color = s.count === 0? "blue": "red";
-          s.node.innerHTML = "<span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
+          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
         }
         return;
       }
