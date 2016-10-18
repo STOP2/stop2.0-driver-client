@@ -263,9 +263,25 @@
 	      minutes = "0" + minutes;
 	    }
 	    UI.prototype.logInfo();
-	    document.querySelector("h2").innerHTML = trip.route.longName + " (suuntaan " + trip.tripHeadsign + "), lähtö klo " + hours + ":" + minutes;
+	    var tripName = UI.prototype.parseHeadsign(trip);
+	    var busNumber = UI.prototype.parseBusNumber(trip);
+	    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + hours + ":" + minutes;
 	    UI.prototype.renderStops(trip); //TODO: Selvitä miksi tämä ei toimi thisillä
 	  }
+	}
+
+	UI.prototype.parseBusNumber = function(trip) {
+	  return parseInt(trip.line.split(":")[1].substring(1));
+	}
+
+	UI.prototype.parseHeadsign = function(trip) {
+	  var tripLeft = trip.route.longName.split(" - ")[0];
+	  var tripRight = trip.route.longName.split(" - ")[1];
+	  if (trip.tripHeadsign == tripLeft) {
+	    tripLeft = tripRight;
+	    tripRight = trip.tripHeadsign;
+	  }
+	  return tripLeft + " - " + tripRight;
 	}
 
 	UI.prototype.logInfo = function() {
