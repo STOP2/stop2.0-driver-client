@@ -100,7 +100,7 @@ UI.prototype.updateStops = function() {
   for (var s of currentTrip.stops) {
     UI.prototype.hideOrShowNode(s);
     // Remove unnecessary classes
-    UI.prototype.cleanClasses(s);
+    UI.prototype.cleanStops(s);
     // Highlight the next stop
     if (currentTrip.stopIndex == currentTrip.stops.indexOf(s)) {
       UI.prototype.highlightNextStop(s);
@@ -152,7 +152,7 @@ UI.prototype.highlightPreviousStop = function(s) {
 }
 
 // Clean the marker classes from the selected node
-UI.prototype.cleanClasses = function(s) {
+UI.prototype.cleanStops = function(s) {
   for (var n of s.node.childNodes) {
     if (n.classList.contains("current-stop-marker")) {
       if (n.classList.contains("current")) {
