@@ -268,8 +268,7 @@
 
 	        <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
 	  // Add a listener to the driver button
-	  var driverButton = document.querySelector(".driver-button");
-	  driverButton.addEventListener("click", function() {
+	  document.querySelector(".driver-button").addEventListener("click", function() {
 	    NetworkHandler.postDriverButton();
 	  });
 	}
