@@ -264,7 +264,7 @@
 	    s.count = 0;
 	    var item = document.createElement("li");
 	    item.classList.add("stop-" + s.code);
-	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: blue;'>" + s.count + "</span></span>";
+	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	    stopList.appendChild(item);
 	    s.node = item;
 	    stops.push(s);
@@ -326,8 +326,21 @@
 	        var origCount = s.count;
 	        s.count = p.passengers;
 	        if (origCount != s.count) {
-	          var color = s.count === 0? "blue": "red";
-	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number' style='font-weight: bold; color: " + color + ";'>" + s.count + "</span></span>";
+	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
+	          for (var n of s.node.childNodes) {
+	            if (n.classList.contains("number")) {
+	              if (s.count != 0) {
+	                if (!n.classList.contains("active")) {
+	                  n.classList.add("active");
+	                }
+	              } else {
+	                if (n.classList.contains("active")) {
+	                  n.classList.remove("active");
+	                }
+	              }
+	              break;
+	            }
+	          }
 	        }
 	        return;
 	      }

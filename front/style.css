@@ -59,7 +59,7 @@ br {
 
 @keyframes highlight {
   0% {
-    background: red
+    background: #DC0451;
   }
   100% {
     background: none;
@@ -80,6 +80,12 @@ li {
 
 .number {
   float: right;
+  font-weight: bold;
+  color: #00B9E4;
+}
+
+.number.active {
+  color: #DC0451;
 }
 
 .current-stop-marker.current {
