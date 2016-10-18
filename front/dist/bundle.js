@@ -233,7 +233,7 @@
 
 	        <br />
 
-	        <button class="driver-button">Kuljettajan nappi, kling</button>`;
+	        <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
 	  var driverButton = document.querySelector(".driver-button");
 	  driverButton.addEventListener("click", function() {
 	    NetworkHandler.postDriverButton();
