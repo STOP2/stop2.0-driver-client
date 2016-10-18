@@ -56,7 +56,7 @@ UI.prototype.renderStops = function(trip) {
 
 UI.prototype.updateStops = function(payload) {
   for (var s of stops.reverse()) {
-    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + 3 >= stops.indexOf(s)) {
+    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= stops.indexOf(s)) {
       if (s.node.classList.contains("hidden")) {
         s.node.classList.remove("hidden");
       }

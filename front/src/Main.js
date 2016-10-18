@@ -27,5 +27,6 @@ window.simulateNextStop = simulateNextStop;
 window.STOP_API = "http://stop20.herokuapp.com"
 window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
+window.VISIBLE_FUTURE_STOPS = 4;
 window.mqttClient = mqttClient;
 window.currentTrip;

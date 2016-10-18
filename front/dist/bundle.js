@@ -73,6 +73,7 @@
 	window.STOP_API = "http://stop20.herokuapp.com"
 	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
+	window.VISIBLE_FUTURE_STOPS = 4;
 	window.mqttClient = mqttClient;
 	window.currentTrip;
 
@@ -274,7 +275,7 @@
 
 	UI.prototype.updateStops = function(payload) {
 	  for (var s of stops.reverse()) {
-	    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + 3 >= stops.indexOf(s)) {
+	    if (currentTrip.stopIndex - 1 <= stops.indexOf(s) && currentTrip.stopIndex + VISIBLE_FUTURE_STOPS >= stops.indexOf(s)) {
 	      if (s.node.classList.contains("hidden")) {
 	        s.node.classList.remove("hidden");
 	      }
