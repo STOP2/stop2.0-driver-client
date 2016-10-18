@@ -8,6 +8,9 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
     req.open(method, url, true);
     req.onload =  function() {
       if (req.status === 200 && req.responseText) {
+        if (req.responseText === '{}') {
+          throw new Error("Error in HSL API: No data returned.");
+        }
         // If successful, resolve the promise by passing back the request response
         resolve(req.responseText);
       } else {
@@ -25,9 +28,6 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
 };
 
 NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
-  if (!str || str === '{}') {
-    throw new Error(" ");
-  }
   var tmpobj = JSON.parse(str);
   try {
     tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
@@ -122,8 +122,8 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip) {
 
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();
-  xhttp.open("POST", STOP_API + "/stoprequests", true);
-  xhttp.send();
+  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
+  xhttp.send(); //TODO: Oikeat datat tämän sisään.
 };
 
 module.exports = new NetworkHandler();

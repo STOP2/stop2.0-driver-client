@@ -10,14 +10,15 @@ function init() {
   vehicleId = document.getElementById('vehicle-name').value;
   mqttClient.on("message", function (topic, payload) {
     console.log([topic, payload].join(": "));
-    UI.addStop(JSON.parse(payload));
+    var stops = JSON.parse(payload).stop_ids;
+    UI.updateStops(stops);
   });
   UI.createUI();
   NetworkHandler.getCurrentVehicleData(vehicleId).then(UI.renderStops);
 }
 
 window.init = init;
-window.STOP_API = "http://asd.asd"
+window.STOP_API = "http://stop20.herokuapp.com"
 window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 window.mqttClient = mqttClient;
