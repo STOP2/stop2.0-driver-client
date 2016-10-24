@@ -7,6 +7,8 @@ NetworkHandler handles all connections to HSL APIs and the backend.
 */
 
 var NetworkHandler = function(){};
+var _Logger = require('./Logger');
+_Logger.init();
 
 var currentTrip;
 
