@@ -55,18 +55,15 @@
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 	window.VISIBLE_FUTURE_STOPS = 4;
 	window.DEBUG_MODE = true;
+	window.UPDATE_INTERVAL = 2000; // milliseconds
 
 	// Initialization
 	UI.createInitialUI();
 	Logger.init();
 
 	// Temp function to "move" to the next stop
-	function simulateNextStop() {
-	  var nh = __webpack_require__(2);
-	  nh.getNextStop(nh.getCurrentTrip());
-	  UI.updateStops(nh.getCurrentTrip());
-	}
-	window.simulateNextStop = simulateNextStop;
+
+	//window.simulateNextStop = simulateNextStop;
 
 
 /***/ },
@@ -81,13 +78,13 @@
 
 	*/
 
-	var UI = function(){}
+	var UI = function(){};
 
 	UI.prototype.createInitialUI = function() {
 	  document.querySelector(".content").innerHTML =
 	        `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
 	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
-	}
+	};
 
 	// Initialization function
 	UI.prototype.init = function() {
@@ -95,7 +92,7 @@
 	  var vehicleId = document.getElementById('vehicle-name').value;
 	  UI.prototype.createUI();
 	  __webpack_require__(2).getCurrentVehicleData(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
-	}
+	};
 
 	UI.prototype.createUI = function() {
 	  // Create the base HTML
@@ -108,7 +105,7 @@
 	  document.querySelector(".driver-button").addEventListener("click", function() {
 	    __webpack_require__(2).postDriverButton();
 	  });
-	}
+	};
 
 	// Setup the header
 	UI.prototype.setupHeader = function(trip) {
@@ -121,12 +118,12 @@
 	    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + startTime;
 	  }
 	  return trip;
-	}
+	};
 
 	// Parse bus start time
 	UI.prototype.parseStartTime = function(trip) {
 	  var t = trip.start / 60;
-	  var hours = Math.floor(t / 60)
+	  var hours = Math.floor(t / 60);
 	  if (hours < 10) {
 	    hours = "0" + hours;
 	  }
@@ -135,12 +132,12 @@
 	    minutes = "0" + minutes;
 	  }
 	  return hours + ":" + minutes
-	}
+	};
 
 	// Parse the bus number
 	UI.prototype.parseBusNumber = function(trip) {
 	  return parseInt(trip.line.split(":")[1].substring(1));
-	}
+	};
 
 	// Parse the bus's start and end locations and add them together
 	UI.prototype.parseHeadsign = function(trip) {
@@ -151,14 +148,20 @@
 	    tripRight = trip.tripHeadsign;
 	  }
 	  return tripLeft + " - " + tripRight;
-	}
+	};
 
 	// General logging
 	UI.prototype.logInfo = function(trip) {
 	  debug("Bus tripId: " + trip.gtfsId);
 	  debug("Bus direction: " + trip.tripHeadsign);
-	  debug("Stops:")
+	  debug("Stops:");
 	  debug(trip.stops);
+	};
+
+	function updateUI() {
+	  var nh = __webpack_require__(2);
+	  nh.getNextStop(nh.getCurrentTrip());
+	  UI.prototype.updateStops(nh.getCurrentTrip());
 	}
 
 	// Create the stop elements
@@ -175,7 +178,8 @@
 	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
 	  __webpack_require__(2).getNextStop(trip);
 	  UI.prototype.updateStops(trip);
-	}
+	  window.setInterval(updateUI, 2000);
+	};
 
 	// Update the stop element highlights
 	UI.prototype.updateStops = function(trip) {
@@ -193,7 +197,7 @@
 	      UI.prototype.highlightPreviousStop(s);
 	    }
 	  }
-	}
+	};
 
 	// Hide or show the stop
 	UI.prototype.hideOrShowNode = function(s, trip) {
@@ -206,7 +210,7 @@
 	      s.node.classList.add("hidden");
 	    }
 	  }
-	}
+	};
 
 	// Highlight the next stop
 	UI.prototype.highlightNextStop = function(s) {
@@ -219,7 +223,7 @@
 	      }
 	    }
 	  }
-	}
+	};
 
 	// Highlight the previous stop
 	UI.prototype.highlightPreviousStop = function(s) {
@@ -232,7 +236,7 @@
 	      }
 	    }
 	  }
-	}
+	};
 
 	// Clean the marker classes from the selected node
 	UI.prototype.cleanStops = function(s) {
@@ -250,7 +254,7 @@
 	      }
 	    }
 	  }
-	}
+	};
 
 	// Update the stop element counts
 	UI.prototype.updateCounts = function(payload, trip) {
@@ -282,7 +286,7 @@
 	      }
 	    }
 	  }
-	}
+	};
 
 	module.exports = new UI();
 
@@ -317,11 +321,11 @@
 	NetworkHandler.prototype.setCurrentTrip = function(trip) {
 	  currentTrip = trip;
 	  return trip;
-	}
+	};
 
 	NetworkHandler.prototype.getCurrentTrip = function() {
 	  return currentTrip;
-	}
+	};
 
 	NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
 	  return new Promise(function (resolve, reject) {
@@ -358,9 +362,9 @@
 	    throw new Error("invalid input data: ")
 	  }
 	  var d = new Date(tmpobj.tst);
-	  var strDate = d.getUTCFullYear();
+	  var strDate = d.getFullYear();
 	  var m = d.getMonth() + 1;
-	  var dt = d.getUTCDate();
+	  var dt = d.getDate();
 	  strDate += m < 10? "0" + m: "" + m;
 	  strDate += dt < 10? "0" + dt: "" + dt;
 	  return {

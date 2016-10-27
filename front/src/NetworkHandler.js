@@ -9,6 +9,7 @@ NetworkHandler handles all connections to HSL APIs and the backend.
 var NetworkHandler = function(){};
 var _Logger = require('./Logger');
 _Logger.init();
+var Geom = require('./Geometry');
 
 var currentTrip;
 
@@ -24,11 +25,11 @@ NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
 NetworkHandler.prototype.setCurrentTrip = function(trip) {
   currentTrip = trip;
   return trip;
-}
+};
 
 NetworkHandler.prototype.getCurrentTrip = function() {
   return currentTrip;
-}
+};
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
   return new Promise(function (resolve, reject) {
@@ -39,7 +40,7 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
         if (req.responseText === '{}') {
           throw new Error("Error in HSL API: No data returned.");
         }
-        debug("Data loaded from HSL API.")
+        debug("Data loaded from HSL API.");
         debug(JSON.parse(req.responseText));
         // If successful, resolve the promise by passing back the request response
         resolve(req.responseText);
@@ -65,9 +66,9 @@ NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
     throw new Error("invalid input data: ")
   }
   var d = new Date(tmpobj.tst);
-  var strDate = d.getUTCFullYear();
+  var strDate = d.getFullYear();
   var m = d.getMonth() + 1;
-  var dt = d.getUTCDate();
+  var dt = d.getDate();
   strDate += m < 10? "0" + m: "" + m;
   strDate += dt < 10? "0" + dt: "" + dt;
   return {

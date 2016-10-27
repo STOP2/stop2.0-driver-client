@@ -7,7 +7,7 @@ var Geometry = function() {};
  * Finds and returns the index of current position in the
  * route geometry graph contained in trip.
  * @param trip - Object containing all data pertaining to a bus trip
- * @param currentPos - The current/previous index into the route geometry graph
+ * @param currentPos - The current/previous location as GPS coordinates
  * @returns {number} - The index corresponding to the current position
  */
 Geometry.prototype.positionOnRoute = function(trip, currentPos) {
