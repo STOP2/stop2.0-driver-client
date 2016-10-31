@@ -99,8 +99,8 @@ UI.prototype.renderStops = function(trip) {
   for (var s of trip.stops) {
     s.count = 0;
     var item = document.createElement("li");
-    item.classList.add("stop-" + s.gtfsId);
-    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
+    item.classList.add("stop-" + s.code);
+    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
     stopList.appendChild(item);
     s.node = item;
   }
@@ -190,13 +190,13 @@ UI.prototype.cleanStops = function(s) {
 UI.prototype.updateCounts = function(payload, trip) {
   for (var s of trip.stops) {
     for (var p of payload) {
-      if (s.gtfsId == p.id) {
+      if (s.code == p.id) {
         // Change the count
         var origCount = s.count;
         s.count = p.passengers;
         // If the count changed, play the highlight effect and add the correct classes
         if (origCount != s.count) {
-          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
+          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
           for (var n of s.node.childNodes) {
             if (n.classList.contains("number")) {
               if (s.count != 0) {

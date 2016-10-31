@@ -53,7 +53,7 @@
 	window.STOP_API = "http://stop20.herokuapp.com";
 	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
-	window.VISIBLE_FUTURE_STOPS = 4;
+	window.VISIBLE_FUTURE_STOPS = 10;
 	window.DEBUG_MODE = true;
 	window.UPDATE_INTERVAL = 4000; // milliseconds
 
@@ -171,15 +171,15 @@
 	  for (var s of trip.stops) {
 	    s.count = 0;
 	    var item = document.createElement("li");
-	    item.classList.add("stop-" + s.gtfsId);
-	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
+	    item.classList.add("stop-" + s.code);
+	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	    stopList.appendChild(item);
 	    s.node = item;
 	  }
 	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
 	  __webpack_require__(2).getNextStop(trip);
 	  UI.prototype.updateStops(trip);
-	    window.setInterval(updateUI, window.UPDATE_INTERVAL);
+	  window.setInterval(updateUI, window.UPDATE_INTERVAL);
 	};
 
 	// Update the stop element highlights
@@ -262,13 +262,13 @@
 	UI.prototype.updateCounts = function(payload, trip) {
 	  for (var s of trip.stops) {
 	    for (var p of payload) {
-	      if (s.gtfsId == p.id) {
+	      if (s.code == p.id) {
 	        // Change the count
 	        var origCount = s.count;
 	        s.count = p.passengers;
 	        // If the count changed, play the highlight effect and add the correct classes
 	        if (origCount != s.count) {
-	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
+	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	          for (var n of s.node.childNodes) {
 	            if (n.classList.contains("number")) {
 	              if (s.count != 0) {
