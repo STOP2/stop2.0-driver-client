@@ -6,21 +6,22 @@ The UI class renders the user interface
 
 */
 
-var UI = function(){}
+var UI = function(){};
 
 UI.prototype.createInitialUI = function() {
   document.querySelector(".content").innerHTML =
         `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
   document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
-}
+};
 
 // Initialization function
 UI.prototype.init = function() {
   debug("*** STOP 2.0 - STARTING INITIALIZATION***")
   var vehicleId = document.getElementById('vehicle-name').value;
   UI.prototype.createUI();
-  require('./NetworkHandler').getCurrentVehicleData(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
-}
+  var nh = require('./NetworkHandler');
+  nh.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+};
 
 UI.prototype.createUI = function() {
   // Create the base HTML
@@ -33,7 +34,7 @@ UI.prototype.createUI = function() {
   document.querySelector(".driver-button").addEventListener("click", function() {
     require('./NetworkHandler').postDriverButton();
   });
-}
+};
 
 // Setup the header
 UI.prototype.setupHeader = function(trip) {
@@ -46,12 +47,12 @@ UI.prototype.setupHeader = function(trip) {
     document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + startTime;
   }
   return trip;
-}
+};
 
 // Parse bus start time
 UI.prototype.parseStartTime = function(trip) {
   var t = trip.start / 60;
-  var hours = Math.floor(t / 60)
+  var hours = Math.floor(t / 60);
   if (hours < 10) {
     hours = "0" + hours;
   }
@@ -60,12 +61,12 @@ UI.prototype.parseStartTime = function(trip) {
     minutes = "0" + minutes;
   }
   return hours + ":" + minutes
-}
+};
 
 // Parse the bus number
 UI.prototype.parseBusNumber = function(trip) {
   return parseInt(trip.line.split(":")[1].substring(1));
-}
+};
 
 // Parse the bus's start and end locations and add them together
 UI.prototype.parseHeadsign = function(trip) {
@@ -76,14 +77,20 @@ UI.prototype.parseHeadsign = function(trip) {
     tripRight = trip.tripHeadsign;
   }
   return tripLeft + " - " + tripRight;
-}
+};
 
 // General logging
 UI.prototype.logInfo = function(trip) {
   debug("Bus tripId: " + trip.gtfsId);
   debug("Bus direction: " + trip.tripHeadsign);
-  debug("Stops:")
+  debug("Stops:");
   debug(trip.stops);
+};
+
+function updateUI() {
+  var nh = require('./NetworkHandler');
+  //nh.getNextStop(nh.getCurrentTrip());
+  nh.getCurrentVehicleData().then(UI.prototype.updateStops);
 }
 
 // Create the stop elements
@@ -100,10 +107,12 @@ UI.prototype.renderStops = function(trip) {
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
   require('./NetworkHandler').getNextStop(trip);
   UI.prototype.updateStops(trip);
-}
+  window.setInterval(updateUI, window.UPDATE_INTERVAL);
+};
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
+  debug("### coordinates: " + trip.lat + "," + trip.long);
   // First hide the stops that are not supposed to be shown yet
   for (var s of trip.stops) {
     UI.prototype.hideOrShowNode(s, trip);
@@ -118,7 +127,7 @@ UI.prototype.updateStops = function(trip) {
       UI.prototype.highlightPreviousStop(s);
     }
   }
-}
+};
 
 // Hide or show the stop
 UI.prototype.hideOrShowNode = function(s, trip) {
@@ -131,7 +140,7 @@ UI.prototype.hideOrShowNode = function(s, trip) {
       s.node.classList.add("hidden");
     }
   }
-}
+};
 
 // Highlight the next stop
 UI.prototype.highlightNextStop = function(s) {
@@ -144,7 +153,7 @@ UI.prototype.highlightNextStop = function(s) {
       }
     }
   }
-}
+};
 
 // Highlight the previous stop
 UI.prototype.highlightPreviousStop = function(s) {
@@ -157,7 +166,7 @@ UI.prototype.highlightPreviousStop = function(s) {
       }
     }
   }
-}
+};
 
 // Clean the marker classes from the selected node
 UI.prototype.cleanStops = function(s) {
@@ -175,13 +184,13 @@ UI.prototype.cleanStops = function(s) {
       }
     }
   }
-}
+};
 
 // Update the stop element counts
 UI.prototype.updateCounts = function(payload, trip) {
   for (var s of trip.stops) {
     for (var p of payload) {
-      if (s.gtfsId == p.id) {
+      if (s.code == p.id) {
         // Change the count
         var origCount = s.count;
         s.count = p.passengers;
@@ -207,6 +216,6 @@ UI.prototype.updateCounts = function(payload, trip) {
       }
     }
   }
-}
+};
 
 module.exports = new UI();

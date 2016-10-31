@@ -9,26 +9,56 @@ NetworkHandler handles all connections to HSL APIs and the backend.
 var NetworkHandler = function(){};
 var _Logger = require('./Logger');
 _Logger.init();
+var Geom = require('./Geometry');
 
 var currentTrip;
+var vehicleID;
 
-NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
-  // This function calls everything relevant
-  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
+NetworkHandler.prototype.init = function(str) {
+  vehicleID = str;
+  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleID + "/")
     .then(this.parseHSLRealTimeData)
     .then(this.getHSLTripData)
     .then(this.startListeningToMQTT)
+    .then(this.updatePosition)
     .then(this.setCurrentTrip);
+};
+
+NetworkHandler.prototype.updatePosition = function(trip) {
+  trip.routeIndex = Geom.positionOnRoute(trip, [trip.long, trip.lat]);
+  trip.stopIndex = Geom.nextStopIndex(trip);
+  return trip;
+};
+
+NetworkHandler.prototype.getCurrentVehicleData = function () {
+  return NetworkHandler.prototype.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleID + "/")
+    .then(this.extractPosition)
+    .catch(function() {return [currentTrip.long, currentTrip.lat]})
+    .then(function (coords) {
+      currentTrip.long = coords[0];
+      currentTrip.lat = coords[1];
+      return currentTrip;
+    }).then(this.updatePosition)
+};
+
+/**
+ *
+ * @param str
+ * @returns {*}
+ */
+NetworkHandler.prototype.extractPosition = function(str) {
+  var ret = NetworkHandler.prototype.parseHSLRealTimeData(str);
+  return [ret.long, ret.lat]
 };
 
 NetworkHandler.prototype.setCurrentTrip = function(trip) {
   currentTrip = trip;
   return trip;
-}
+};
 
 NetworkHandler.prototype.getCurrentTrip = function() {
   return currentTrip;
-}
+};
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
   return new Promise(function (resolve, reject) {
@@ -39,7 +69,7 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(method, url) {
         if (req.responseText === '{}') {
           throw new Error("Error in HSL API: No data returned.");
         }
-        debug("Data loaded from HSL API.")
+        debug("Data loaded from HSL API.");
         debug(JSON.parse(req.responseText));
         // If successful, resolve the promise by passing back the request response
         resolve(req.responseText);
@@ -65,9 +95,9 @@ NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
     throw new Error("invalid input data: ")
   }
   var d = new Date(tmpobj.tst);
-  var strDate = d.getUTCFullYear();
+  var strDate = d.getFullYear();
   var m = d.getMonth() + 1;
-  var dt = d.getUTCDate();
+  var dt = d.getDate();
   strDate += m < 10? "0" + m: "" + m;
   strDate += dt < 10? "0" + dt: "" + dt;
   return {
@@ -100,6 +130,7 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
           {
             longName
           }
+          geometry
         }
     }`;
   return new Promise(function (resolve, reject) {
@@ -115,12 +146,12 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
             newTrip[prop] = tripData[prop];
           }
         }
-        debug("Trip loaded from HSL real time API.")
+        debug("Trip loaded from HSL API.");
         debug(newTrip);
         resolve(newTrip);
       } else {
         // If it fails, reject the promise with a error message
-        reject(Error('Connection to HSL real time API failed; error code: ' + req.statusText));
+        reject(Error('Connection to HSL API failed; error code: ' + req.statusText));
       }
     };
     req.onerror = function() {
@@ -135,13 +166,13 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
 NetworkHandler.prototype.startListeningToMQTT = function(trip) {
   var mqttClient = require('mqtt').connect("ws://epsilon.fixme.fi:9001");
   // Subscribe to the trip's MQTT channel
-  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+  mqttClient.subscribe('stoprequests/' + trip.gtfsId);
   // React to MQTT messages
   mqttClient.on("message", function (topic, payload) {
     debug("MQTT: '" + [topic, payload].join(": ") + "'");
     require('./UI').updateCounts(JSON.parse(payload).stop_ids, trip);
   });
-  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
   return trip;
 };
 
