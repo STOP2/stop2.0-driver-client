@@ -439,7 +439,6 @@
 	    req.onload =  function() {
 	      if (req.status === 200 && req.responseText) {
 	        // If successful, resolve the promise by passing back the request response
-	        debug(req.responseText);
 	        var newTrip = JSON.parse(req.responseText).data.fuzzyTrip;
 	        for (var prop in tripData) {
 	          if (tripData.hasOwnProperty(prop)) {
