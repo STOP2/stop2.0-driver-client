@@ -9,7 +9,7 @@ window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 window.VISIBLE_FUTURE_STOPS = 4;
 window.DEBUG_MODE = true;
-window.UPDATE_INTERVAL = 2000; // milliseconds
+window.UPDATE_INTERVAL = 4000; // milliseconds
 
 // Initialization
 UI.createInitialUI();

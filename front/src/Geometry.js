@@ -41,8 +41,8 @@ Geometry.prototype.isBetweenPoints = function (point1, point2, location) {
 
 /**
  * Finds out whether p1 is within a certain distance (DEVIATION) from p2
- * @param p1 - GPS coordinates
- * @param p2 - GPS coordinates
+ * @param p1 - GPS coordinates having form [longitude, latitude]
+ * @param p2 - GPS coordinates ([longitude, latitude])
  * @returns {boolean} - true if points are within DEVIATION, false otherwise
  */
 Geometry.prototype.areCloseEnough = function (p1, p2) {
@@ -58,9 +58,13 @@ Geometry.prototype.nextStopIndex = function(trip) {
   var stoplist = trip.stops;
   var geom = trip.geometry;
 
+  if (trip.stopIndex === undefined) {
+    trip.stopIndex = 0;
+  }
+
   if (trip.routeIndex == 0 && trip.stopIndex == 0) {
     return 0;
-  } else if (trip.routeIndex == stoplist.length -  1) {
+  } else if (trip.routeIndex == geom.length -  1) {
     return stoplist.length - 1;
   }
   for (var i = trip.routeIndex; i < geom.length - 1; i++) {

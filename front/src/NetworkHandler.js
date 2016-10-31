@@ -12,14 +12,43 @@ _Logger.init();
 var Geom = require('./Geometry');
 
 var currentTrip;
+var vehicleID;
 
-NetworkHandler.prototype.getCurrentVehicleData = function(vehicleName) {
-  // This function calls everything relevant
-  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleName + "/")
+NetworkHandler.prototype.init = function(str) {
+  vehicleID = str;
+  return this.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleID + "/")
     .then(this.parseHSLRealTimeData)
     .then(this.getHSLTripData)
     .then(this.startListeningToMQTT)
+    .then(this.updatePosition)
     .then(this.setCurrentTrip);
+};
+
+NetworkHandler.prototype.updatePosition = function(trip) {
+  trip.routeIndex = Geom.positionOnRoute(trip, [trip.long, trip.lat]);
+  trip.stopIndex = Geom.nextStopIndex(trip);
+  return trip;
+};
+
+NetworkHandler.prototype.getCurrentVehicleData = function () {
+  return NetworkHandler.prototype.getHSLRealTimeAPIData("GET", RT_API_URL + vehicleID + "/")
+    .then(this.extractPosition)
+    .catch(function() {return [currentTrip.long, currentTrip.lat]})
+    .then(function (coords) {
+      currentTrip.long = coords[0];
+      currentTrip.lat = coords[1];
+      return currentTrip;
+    }).then(this.updatePosition)
+};
+
+/**
+ *
+ * @param str
+ * @returns {*}
+ */
+NetworkHandler.prototype.extractPosition = function(str) {
+  var ret = NetworkHandler.prototype.parseHSLRealTimeData(str);
+  return [ret.long, ret.lat]
 };
 
 NetworkHandler.prototype.setCurrentTrip = function(trip) {
@@ -101,6 +130,7 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
           {
             longName
           }
+          geometry
         }
     }`;
   return new Promise(function (resolve, reject) {

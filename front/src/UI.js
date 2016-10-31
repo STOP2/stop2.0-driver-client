@@ -19,7 +19,8 @@ UI.prototype.init = function() {
   debug("*** STOP 2.0 - STARTING INITIALIZATION***")
   var vehicleId = document.getElementById('vehicle-name').value;
   UI.prototype.createUI();
-  require('./NetworkHandler').getCurrentVehicleData(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+  var nh = require('./NetworkHandler');
+  nh.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
 };
 
 UI.prototype.createUI = function() {
@@ -88,8 +89,8 @@ UI.prototype.logInfo = function(trip) {
 
 function updateUI() {
   var nh = require('./NetworkHandler');
-  nh.getNextStop(nh.getCurrentTrip());
-  UI.prototype.updateStops(nh.getCurrentTrip());
+  //nh.getNextStop(nh.getCurrentTrip());
+  nh.getCurrentVehicleData().then(UI.prototype.updateStops);
 }
 
 // Create the stop elements
@@ -106,11 +107,12 @@ UI.prototype.renderStops = function(trip) {
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
   require('./NetworkHandler').getNextStop(trip);
   UI.prototype.updateStops(trip);
-  window.setInterval(updateUI, 2000);
+    window.setInterval(updateUI, window.UPDATE_INTERVAL);
 };
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
+  debug("### long: " + trip.long + ", lat: " + trip.lat);
   // First hide the stops that are not supposed to be shown yet
   for (var s of trip.stops) {
     UI.prototype.hideOrShowNode(s, trip);
