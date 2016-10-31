@@ -99,20 +99,20 @@ UI.prototype.renderStops = function(trip) {
   for (var s of trip.stops) {
     s.count = 0;
     var item = document.createElement("li");
-    item.classList.add("stop-" + s.code);
-    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
+    item.classList.add("stop-" + s.gtfsId);
+    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
     stopList.appendChild(item);
     s.node = item;
   }
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
   require('./NetworkHandler').getNextStop(trip);
   UI.prototype.updateStops(trip);
-    window.setInterval(updateUI, window.UPDATE_INTERVAL);
+  window.setInterval(updateUI, window.UPDATE_INTERVAL);
 };
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
-  debug("### long: " + trip.long + ", lat: " + trip.lat);
+  debug("### coordinates: " + trip.lat + "," + trip.long);
   // First hide the stops that are not supposed to be shown yet
   for (var s of trip.stops) {
     UI.prototype.hideOrShowNode(s, trip);
@@ -196,7 +196,7 @@ UI.prototype.updateCounts = function(payload, trip) {
         s.count = p.passengers;
         // If the count changed, play the highlight effect and add the correct classes
         if (origCount != s.count) {
-          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
+          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
           for (var n of s.node.childNodes) {
             if (n.classList.contains("number")) {
               if (s.count != 0) {

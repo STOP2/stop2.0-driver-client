@@ -50,7 +50,7 @@
 	var Logger = __webpack_require__(3);
 
 	// Global constants
-	window.STOP_API = "http://stop20.herokuapp.com"
+	window.STOP_API = "http://stop20.herokuapp.com";
 	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 	window.VISIBLE_FUTURE_STOPS = 4;
@@ -171,8 +171,8 @@
 	  for (var s of trip.stops) {
 	    s.count = 0;
 	    var item = document.createElement("li");
-	    item.classList.add("stop-" + s.code);
-	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
+	    item.classList.add("stop-" + s.gtfsId);
+	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
 	    stopList.appendChild(item);
 	    s.node = item;
 	  }
@@ -184,7 +184,7 @@
 
 	// Update the stop element highlights
 	UI.prototype.updateStops = function(trip) {
-	  debug("### long: " + trip.long + ", lat: " + trip.lat);
+	  debug("### coordinates: " + trip.lat + "," + trip.long);
 	  // First hide the stops that are not supposed to be shown yet
 	  for (var s of trip.stops) {
 	    UI.prototype.hideOrShowNode(s, trip);
@@ -268,7 +268,7 @@
 	        s.count = p.passengers;
 	        // If the count changed, play the highlight effect and add the correct classes
 	        if (origCount != s.count) {
-	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
+	          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.gtfsId + ") <span class='number'>" + s.count + "</span></span>";
 	          for (var n of s.node.childNodes) {
 	            if (n.classList.contains("number")) {
 	              if (s.count != 0) {
@@ -439,18 +439,19 @@
 	    req.onload =  function() {
 	      if (req.status === 200 && req.responseText) {
 	        // If successful, resolve the promise by passing back the request response
+	        debug(req.responseText);
 	        var newTrip = JSON.parse(req.responseText).data.fuzzyTrip;
 	        for (var prop in tripData) {
 	          if (tripData.hasOwnProperty(prop)) {
 	            newTrip[prop] = tripData[prop];
 	          }
 	        }
-	        debug("Trip loaded from HSL real time API.")
+	        debug("Trip loaded from HSL API.");
 	        debug(newTrip);
 	        resolve(newTrip);
 	      } else {
 	        // If it fails, reject the promise with a error message
-	        reject(Error('Connection to HSL real time API failed; error code: ' + req.statusText));
+	        reject(Error('Connection to HSL API failed; error code: ' + req.statusText));
 	      }
 	    };
 	    req.onerror = function() {
@@ -465,13 +466,13 @@
 	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
 	  var mqttClient = __webpack_require__(5).connect("ws://epsilon.fixme.fi:9001");
 	  // Subscribe to the trip's MQTT channel
-	  mqttClient.subscribe('stoprequests/' + trip.gtfsId.replace("HSL:",""));
+	  mqttClient.subscribe('stoprequests/' + trip.gtfsId);
 	  // React to MQTT messages
 	  mqttClient.on("message", function (topic, payload) {
 	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
 	    __webpack_require__(1).updateCounts(JSON.parse(payload).stop_ids, trip);
 	  });
-	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId.replace("HSL:","") + '".');
+	  debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
 	  return trip;
 	};
 
