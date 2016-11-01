@@ -68,6 +68,14 @@ UI.prototype.parseBusNumber = function(trip) {
   return parseInt(trip.line.split(":")[1].substring(1));
 };
 
+UI.prototype.hslIntToExt = function(intNum) {
+  return 0;
+};
+
+UI.prototype.hslIntToExt = function(extNum) {
+  return 0;
+};
+
 // Parse the bus's start and end locations and add them together
 UI.prototype.parseHeadsign = function(trip) {
   var tripLeft = trip.route.longName.split(" - ")[0];

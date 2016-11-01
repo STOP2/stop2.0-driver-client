@@ -1,9 +1,6 @@
 var chai = require('chai');
 var assert = chai.assert;
 var expect = chai.expect;
-var sinon = require('sinon');
-var chaiAsPromised = require("chai-as-promised");
-chai.use(chaiAsPromised);
 chai.should();
 var Geometry = require('../src/Geometry');
 
