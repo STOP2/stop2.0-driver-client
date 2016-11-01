@@ -94,6 +94,9 @@ NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
   } catch (e) {
     throw new Error("invalid input data: ")
   }
+  if (tmpobj.lat === 0 || tmpobj.long === 0) {
+    throw new Error("No location data");
+  }
   var d = new Date(tmpobj.tst);
   var strDate = d.getFullYear();
   var m = d.getMonth() + 1;
