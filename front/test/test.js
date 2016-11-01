@@ -15,6 +15,11 @@ describe('NetworkHandler', function() {
     '"tsi":1475513530,"spd":1.11,"lat":60.25511,"long":25.06368,"dl":62,' +
     '"oday":"XXX","jrn":"XXX","line":"1075","start":"1942"}}}';
 
+  var NOLocation = '{"/hfp/journey/bus/5495/1506/2/XXX/1124/1140125/0;0/00/00/00":' +
+    '{"VP":' +
+    '{"desi":"1506","dir":"2","oper":"XXX","veh":"5495","tst":"2016-11-01T09:59:05.515Z",' +
+    '"tsi":1477994345,"spd":0,"lat":0,"long":0,"dl":0,"oday":"XXX","jrn":"XXX","line":"1506","start":"1124"}}}';
+
   var testTripData = {'vehicle': '1210',
     'line': 'HSL:1075',
     'direction': 1,
@@ -314,6 +319,10 @@ describe('NetworkHandler', function() {
 
     it('should throw an error if given invalid input', function () {
       chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, '{"foo": {"bar": "baz"}}')).to.throw(Error);
+    });
+
+    it('should throw an error if the result is missing location data', function() {
+        chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, NOLocation)).to.throw(Error);
     });
   });
 

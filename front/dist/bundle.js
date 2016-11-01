@@ -393,6 +393,9 @@
 	  } catch (e) {
 	    throw new Error("invalid input data: ")
 	  }
+	  if (tmpobj.lat === 0 || tmpobj.long === 0) {
+	    throw new Error("No location data");
+	  }
 	  var d = new Date(tmpobj.tst);
 	  var strDate = d.getFullYear();
 	  var m = d.getMonth() + 1;
@@ -412,6 +415,8 @@
 	};
 
 	NetworkHandler.prototype.getHSLTripData = function(tripData) {
+	  debug("getHSLTripData  tripData:");
+	  debug(tripData);
 	  var queryStr = `{
 	      fuzzyTrip(route: "${tripData.line}", direction: ${tripData.direction}, date: "${tripData.date}", time: ${tripData.start})
 	        {
@@ -440,6 +445,8 @@
 	      if (req.status === 200 && req.responseText) {
 	        // If successful, resolve the promise by passing back the request response
 	        var newTrip = JSON.parse(req.responseText).data.fuzzyTrip;
+	        debug("Trip data received HSL API.");
+	        debug(newTrip);
 	        for (var prop in tripData) {
 	          if (tripData.hasOwnProperty(prop)) {
 	            newTrip[prop] = tripData[prop];
