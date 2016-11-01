@@ -31,19 +31,37 @@ describe('UI', function() {
     '1091', '1091K', '1092', '1092N', '1093', '1093K', '1094', '1094A', '1094B', '1094N', '1095',
     '1095N', '1096', '1096N', '1097', '1097N', '1097V', '1098',
   ];
-  describe("hslIntToExt", function() {
-    it('descr', function() {
+
+  describe("#hslIntToExt", function() {
+    it('should produce correct output given correct input', function() {
       for (var i = 0; i < intLines.length; i++) {
-        extLines[i].should.equal(UI.hslIntToExt());
+        extLines[i].should.equal(UI.hslIntToExt(intLines[i]));
       }
     });
+
+    it('produce an exception when called with a wrong type argument', function() {
+      chai.expect(UI.hslIntToExt.bind(UI, 553)).to.throw(TypeError);
+    });
+
+    it('produce an exception when called with a wrong argument', function() {
+      chai.expect(UI.hslIntToExt.bind(UI, '111558')).to.throw(Error);
+    });
+
   });
 
-  describe("hslExtToInt", function() {
-    it('descr', function() {
+  describe("#hslExtToInt", function() {
+    it('should produce correct output given correct input', function() {
       for (var i = 0; i < intLines.length; i++) {
-        intLines[i].should.equal(UI.hslIntToExt());
+        intLines[i].should.equal(UI.hslExtToInt(extLines[i]));
       }
+    });
+
+    it('produce an exception when called with a wrong type argument', function() {
+      chai.expect(UI.hslExtToInt.bind(UI, 553)).to.throw(TypeError);
+    });
+
+    it('produce an exception when called with a wrong argument', function() {
+      chai.expect(UI.hslExtToInt.bind(UI, '558')).to.throw(Error);
     });
   });
 });
