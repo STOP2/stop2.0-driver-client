@@ -12,16 +12,38 @@ var NwH = require('./NetworkHandler');
 
 UI.prototype.createInitialUI = function() {
   document.querySelector(".content").innerHTML =
-        `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
-  document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
+        `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList)
+};
+
+UI.prototype.initBusList = function() {
+  var vehicleId = UI.prototype.hslExtToInt(document.getElementById('route-number').value);
+  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
+    var content = document.querySelector(".content").innerHTML = `
+      <h2>Valitse lähtö</h2>
+      <ul>
+    `;
+    for (var t of trips) {
+      console.log(t);
+      content = content + '<li><a class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</a></li>'
+    }
+    content = content + '</ul>'
+    document.querySelector(".content").innerHTML = content;
+    var busSelections = document.getElementsByClassName("bus-selection-button");
+    for (var s of busSelections) {
+      s.addEventListener("click", function() {
+        UI.prototype.initMainView(s.classList[1].split("vehicle-")[1]);
+      })
+    }
+  });
 };
 
 // Initialization function
-UI.prototype.init = function() {
+UI.prototype.initMainView = function(vehicleId) {
   debug("*** STOP 2.0 - STARTING INITIALIZATION***");
-  var vehicleId = document.getElementById('vehicle-name').value;
   UI.prototype.createUI();
   NwH.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+  window.setInterval(() => { NwH.getCurrentVehicleData().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
 };
 
 UI.prototype.createUI = function() {
@@ -132,10 +154,6 @@ UI.prototype.logInfo = function(trip) {
   debug(trip.stops);
 };
 
-function updateUI() {
-  NwH.getCurrentVehicleData().then(UI.prototype.updateStops);
-}
-
 // Create the stop elements
 UI.prototype.renderStops = function(trip) {
   var stopList = document.querySelector(".stop-list");
@@ -149,12 +167,12 @@ UI.prototype.renderStops = function(trip) {
   }
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
   UI.prototype.updateStops(trip);
-  window.setInterval(updateUI, window.UPDATE_INTERVAL);
 };
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
   debug("### coordinates: " + trip.lat + "," + trip.long);
+  UI.prototype.resetIfLastStop(trip);
   // First hide the stops that are not supposed to be shown yet
   for (var s of trip.stops) {
     UI.prototype.hideOrShowNode(s, trip);
@@ -168,6 +186,12 @@ UI.prototype.updateStops = function(trip) {
     else if (trip.stopIndex == trip.stops.indexOf(s) + 1) {
       UI.prototype.highlightPreviousStop(s);
     }
+  }
+};
+
+UI.prototype.resetIfLastStop = function (trip) {
+  if (trip.stopIndex == trip.stops.length - 1) {
+    window.location.reload();
   }
 };
 
