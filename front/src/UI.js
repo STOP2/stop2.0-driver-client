@@ -16,7 +16,7 @@ UI.prototype.createInitialUI = function() {
 
 // Initialization function
 UI.prototype.init = function() {
-  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
+  debug("*** STOP 2.0 - STARTING INITIALIZATION***");
   var vehicleId = document.getElementById('vehicle-name').value;
   UI.prototype.createUI();
   var nh = require('./NetworkHandler');
@@ -124,6 +124,7 @@ UI.prototype.parseHeadsign = function(trip) {
 
 // General logging
 UI.prototype.logInfo = function(trip) {
+  debug("Bus ID: " + trip.vehicle);
   debug("Bus tripId: " + trip.gtfsId);
   debug("Bus direction: " + trip.tripHeadsign);
   debug("Stops:");
@@ -132,7 +133,6 @@ UI.prototype.logInfo = function(trip) {
 
 function updateUI() {
   var nh = require('./NetworkHandler');
-  //nh.getNextStop(nh.getCurrentTrip());
   nh.getCurrentVehicleData().then(UI.prototype.updateStops);
 }
 
@@ -148,7 +148,6 @@ UI.prototype.renderStops = function(trip) {
     s.node = item;
   }
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
-  require('./NetworkHandler').getNextStop(trip);
   UI.prototype.updateStops(trip);
   window.setInterval(updateUI, window.UPDATE_INTERVAL);
 };

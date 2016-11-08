@@ -7,7 +7,9 @@ chai.should();
 var expect = chai.expect;
 var NetworkHandler = require('../src/NetworkHandler');
 
+
 describe('NetworkHandler', function() {
+  global.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
 
   var HSLData = '{"/hfp/journey/bus/1210/1075/2/XXX/1942/1413118/60;25/20/56/53":' +
     '{"VP":' +
@@ -21,8 +23,8 @@ describe('NetworkHandler', function() {
     '"tsi":1477994345,"spd":0,"lat":0,"long":0,"dl":0,"oday":"XXX","jrn":"XXX","line":"1506","start":"1124"}}}';
 
   var testTripData = {'vehicle': '1210',
-    'line': 'HSL:1075',
-    'direction': 1,
+    'line': '1075',
+    'dir': 1,
     'lat': 60.25511,
     'long': 25.06368,
     'start': 70920,
@@ -303,6 +305,161 @@ describe('NetworkHandler', function() {
 }
 `;
 
+  var RTData = '{' +
+    '"/hfp/journey/bus/1209/1075/2/XXX/1342/1111114/60;24/19/85/00":' +
+        '{"VP":{"desi":"1075","dir":"2","oper":"XXX","veh":"1209","tst":"2016-11-04T12:24:52.617Z","tsi":1478262292,' +
+        '"spd":0,"lat":60.18005,"long":24.95035,"dl":258,"oday":"XXX","jrn":"XXX","line":"1075","start":"1342"}},' +
+    '"/hfp/journey/bus/1210/1075/1/XXX/1422/1111112/60;24/19/75/50":' +
+        '{"VP":{"desi":"1075","dir":"1","oper":"XXX","veh":"1210","tst":"2016-11-04T12:25:23.047Z","tsi":1478262323,' +
+        '"spd":6.11,"lat":60.1757,"long":24.95024,"dl":8,"oday":"XXX","jrn":"XXX","line":"1075","start":"1422"}},' +
+    '"/hfp/journey/bus/1211/1075/2/XXX/1413/1413118/60;25/20/56/53":' +
+        '{"VP":{"desi":"1075","dir":"2","oper":"XXX","veh":"1211","tst":"2016-11-04T12:25:16.602Z","tsi":1478262316,' +
+        '"spd":5.56,"lat":60.25531,"long":25.06375,"dl":140,"oday":"XXX","jrn":"XXX","line":"1075","start":"1413"}},' +
+    '"/hfp/journey/bus/1212/1075/2/XXX/1402/1383114/60;25/20/41/19":' +
+        '{"VP":{"desi":"1075","dir":"2","oper":"XXX","veh":"1212","tst":"2016-11-04T12:25:28.062Z","tsi":1478262328,' +
+        '"spd":10,"lat":60.24162,"long":25.01989,"dl":368,"oday":"XXX","jrn":"XXX","line":"1075","start":"1402"}},' +
+    '"/hfp/journey/bus/1213/1075/1/XXX/1402/1362105/60;25/20/21/81":' +
+        '{"VP":{"desi":"1075","dir":"1","oper":"XXX","veh":"1213","tst":"2016-11-04T12:25:04.718Z","tsi":1478262304,' +
+        '"spd":7.78,"lat":60.22821,"long":25.01161,"dl":180,"oday":"XXX","jrn":"XXX","line":"1075","start":"1402"}},' +
+    '"/hfp/journey/bus/1214/1075/2/XXX/1423/1411110/60;25/20/74/24":' +
+        '{"VP":{"desi":"1075","dir":"2","oper":"XXX","veh":"1214","tst":"2016-11-04T12:25:32.549Z","tsi":1478262332,' +
+        '"spd":10.56,"lat":60.27243,"long":25.04498,"dl":6,"oday":"XXX","jrn":"XXX","line":"1075","start":"1423"}},' +
+    '"/hfp/journey/bus/1215/1077/1/XXX/1409/1240103/60;24/29/06/13":' +
+        '{"VP":{"desi":"1077","dir":"1","oper":"XXX","veh":"1215","tst":"2016-11-04T12:25:18.637Z","tsi":1478262318,' +
+        '"spd":0,"lat":60.20192,"long":24.96371,"dl":182,"oday":"XXX","jrn":"XXX","line":"1077","start":"1409"}},' +
+    '"/hfp/journey/bus/1219/4615/1/XXX/1415/1220184/60;24/19/96/12":' +
+        '{"VP":{"desi":"4615","dir":"1","oper":"XXX","veh":"1219","tst":"2016-11-04T12:25:21.287Z","tsi":1478262321,' +
+        '"spd":3.89,"lat":60.19147,"long":24.96209,"dl":80,"oday":"XXX","jrn":"XXX","line":"4615","start":"1415"}},' +
+    '"/hfp/journey/bus/1302/1039/1/XXX/1356/1465101/60;24/28/17/47":' +
+        '{"VP":{"desi":"1039","dir":"1","oper":"XXX","veh":"1302","tst":"2016-11-04T12:25:12.562Z","tsi":1478262312,' +
+        '"spd":0,"lat":60.21481,"long":24.87773,"dl":326,"oday":"XXX","jrn":"XXX","line":"1039","start":"1356"}},' +
+    '"/hfp/journey/bus/1303/1039/1/XXX/1437/undefined/60;24/19/63/81":' +
+        '{"VP":{"desi":"1039","dir":"1","oper":"XXX","veh":"1303","tst":"2016-11-04T12:25:15.203Z","tsi":1478262315,' +
+        '"spd":0,"lat":60.16843,"long":24.93116,"oday":"XXX","jrn":"XXX","line":"1039","start":"1437"}},' +
+    '"/hfp/journey/bus/1304/1039B/2/XXX/1401/1301124/60;24/18/98/58":' +
+        '{"VP":{"desi":"1039B","dir":"2","oper":"XXX","veh":"1304","tst":"2016-11-04T12:25:25.189Z","tsi":1478262325,' +
+        '"spd":5.56,"lat":60.19551,"long":24.88888,"dl":100,"oday":"XXX","jrn":"XXX","line":"1039B","start":"1401"}}' +
+    '}';
+
+  var rtarray = [
+    { desi: '1075',
+    dir: 1,
+    oper: 'XXX',
+    veh: '1209',
+    tst: '2016-11-04T12:24:52.617Z',
+    tsi: 1478262292,
+    spd: 0,
+    lat: 60.18005,
+    long: 24.95035,
+    dl: 258,
+    oday: 'XXX',
+    jrn: 'XXX',
+    line: '1075',
+    start: 49320,
+    date: '20161104' },
+    { desi: '1075',
+      dir: 0,
+      oper: 'XXX',
+      veh: '1210',
+      tst: '2016-11-04T12:25:23.047Z',
+      tsi: 1478262323,
+      spd: 6.11,
+      lat: 60.1757,
+      long: 24.95024,
+      dl: 8,
+      oday: 'XXX',
+      jrn: 'XXX',
+      line: '1075',
+      start: 51720,
+      date: '20161104' },
+    { desi: '1075',
+      dir: 1,
+      oper: 'XXX',
+      veh: '1211',
+      tst: '2016-11-04T12:25:16.602Z',
+      tsi: 1478262316,
+      spd: 5.56,
+      lat: 60.25531,
+      long: 25.06375,
+      dl: 140,
+      oday: 'XXX',
+      jrn: 'XXX',
+      line: '1075',
+      start: 51180,
+      date: '20161104' },
+    { desi: '1075',
+      dir: 1,
+      oper: 'XXX',
+      veh: '1212',
+      tst: '2016-11-04T12:25:28.062Z',
+      tsi: 1478262328,
+      spd: 10,
+      lat: 60.24162,
+      long: 25.01989,
+      dl: 368,
+      oday: 'XXX',
+      jrn: 'XXX',
+      line: '1075',
+      start: 50520,
+      date: '20161104' },
+    { desi: '1075',
+      dir: 0,
+      oper: 'XXX',
+      veh: '1213',
+      tst: '2016-11-04T12:25:04.718Z',
+      tsi: 1478262304,
+      spd: 7.78,
+      lat: 60.22821,
+      long: 25.01161,
+      dl: 180,
+      oday: 'XXX',
+      jrn: 'XXX',
+      line: '1075',
+      start: 50520,
+      date: '20161104' },
+    { desi: '1075',
+      dir: 1,
+      oper: 'XXX',
+      veh: '1214',
+      tst: '2016-11-04T12:25:32.549Z',
+      tsi: 1478262332,
+      spd: 10.56,
+      lat: 60.27243,
+      long: 25.04498,
+      dl: 6,
+      oday: 'XXX',
+      jrn: 'XXX',
+      line: '1075',
+      start: 51780,
+      date: '20161104' } ];
+
+  describe('#getActiveTripsByRouteNum', function () {
+    var xhr;
+    var requests;
+
+    beforeEach(function () {
+      requests = [];
+      xhr = sinon.useFakeXMLHttpRequest();
+      global.XMLHttpRequest = xhr;
+      xhr.onCreate = function (xhr) {
+        requests.push(xhr);
+      };
+
+    });
+
+    afterEach(function () {
+      xhr.restore();
+      requests = [];
+    });
+
+    it.skip('should return the correct number of entries', function(done) {
+      var r = NetworkHandler.getActiveTripsByRouteNum("1075");
+      requests[0].respond(200, { "Content-Type": "application/json"}, RTData);
+      //r.should.eventually.deep.equal(rtarray).and.notify(done);
+      r.then(function (arr) {console.log(arr)}).and.notify(done);
+    });
+  });
+
   describe('#parseHSLRealTimeData', function () {
     it('should return a valid trip data object', function () {
       var d = NetworkHandler.parseHSLRealTimeData(HSLData);
@@ -372,13 +529,13 @@ describe('NetworkHandler', function() {
     });
 
     it('should return valid data with valid request', function (done) {
-      var r = NetworkHandler.getHSLRealTimeAPIData("GET", "http://dev.hsl.fi/hfp/journey/bus/1213/");
+      var r = NetworkHandler.getHSLRealTimeAPIData("1213");
       requests[0].respond(200, { "Content-Type": "application/json"}, HSLData);
       r.should.eventually.deep.equal(HSLData).and.notify(done);
     });
 
     it('should handle 404', function (done) {
-      var r = NetworkHandler.getHSLRealTimeAPIData("GET", "http://dev.hsl.fi/hfp/journey/bus/1213/");
+      var r = NetworkHandler.getHSLRealTimeAPIData("1213");
       requests[0].respond(404, { "Content-Type": "application/html"}, "nopenopenope");
       r.should.eventually.be.rejectedWith(Error).and.notify(done);
     });
