@@ -171,7 +171,7 @@
 	  for (var s of trip.stops) {
 	    s.count = 0;
 	    var item = document.createElement("li");
-	    item.classList.add("stop-" + s.code);
+	    item.classList.add("stop-" + s.gtfsId);
 	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
 	    stopList.appendChild(item);
 	    s.node = item;
@@ -262,7 +262,7 @@
 	UI.prototype.updateCounts = function(payload, trip) {
 	  for (var s of trip.stops) {
 	    for (var p of payload) {
-	      if (s.code == p.id) {
+	      if (s.gtfsId == p.id) {
 	        // Change the count
 	        var origCount = s.count;
 	        s.count = p.passengers;
@@ -415,8 +415,6 @@
 	};
 
 	NetworkHandler.prototype.getHSLTripData = function(tripData) {
-	  debug("getHSLTripData  tripData:");
-	  debug(tripData);
 	  var queryStr = `{
 	      fuzzyTrip(route: "${tripData.line}", direction: ${tripData.direction}, date: "${tripData.date}", time: ${tripData.start})
 	        {
@@ -445,8 +443,6 @@
 	      if (req.status === 200 && req.responseText) {
 	        // If successful, resolve the promise by passing back the request response
 	        var newTrip = JSON.parse(req.responseText).data.fuzzyTrip;
-	        debug("Trip data received HSL API.");
-	        debug(newTrip);
 	        for (var prop in tripData) {
 	          if (tripData.hasOwnProperty(prop)) {
 	            newTrip[prop] = tripData[prop];
