@@ -8,6 +8,8 @@ The UI class renders the user interface
 
 var UI = function(){};
 
+var NwH = require('./NetworkHandler');
+
 UI.prototype.createInitialUI = function() {
   document.querySelector(".content").innerHTML =
         `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
@@ -19,8 +21,7 @@ UI.prototype.init = function() {
   debug("*** STOP 2.0 - STARTING INITIALIZATION***");
   var vehicleId = document.getElementById('vehicle-name').value;
   UI.prototype.createUI();
-  var nh = require('./NetworkHandler');
-  nh.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+  NwH.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
 };
 
 UI.prototype.createUI = function() {
@@ -32,7 +33,7 @@ UI.prototype.createUI = function() {
         <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
   // Add a listener to the driver button
   document.querySelector(".driver-button").addEventListener("click", function() {
-    require('./NetworkHandler').postDriverButton();
+    NwH.postDriverButton();
   });
 };
 
@@ -132,8 +133,7 @@ UI.prototype.logInfo = function(trip) {
 };
 
 function updateUI() {
-  var nh = require('./NetworkHandler');
-  nh.getCurrentVehicleData().then(UI.prototype.updateStops);
+  NwH.getCurrentVehicleData().then(UI.prototype.updateStops);
 }
 
 // Create the stop elements
@@ -142,7 +142,7 @@ UI.prototype.renderStops = function(trip) {
   for (var s of trip.stops) {
     s.count = 0;
     var item = document.createElement("li");
-    item.classList.add("stop-" + s.code);
+    item.classList.add("stop-" + s.gtfsId);
     item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
     stopList.appendChild(item);
     s.node = item;
@@ -232,29 +232,18 @@ UI.prototype.cleanStops = function(s) {
 UI.prototype.updateCounts = function(payload, trip) {
   for (var s of trip.stops) {
     for (var p of payload) {
-      if (s.code == p.id) {
+      if (s.gtfsId == p.id) {
         // Change the count
         var origCount = s.count;
         s.count = p.passengers;
         // If the count changed, play the highlight effect and add the correct classes
         if (origCount != s.count) {
-          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
-          for (var n of s.node.childNodes) {
-            if (n.classList.contains("number")) {
-              if (s.count != 0) {
-                if (!n.classList.contains("active")) {
-                  n.classList.add("active");
-                }
-              } else {
-                if (n.classList.contains("active")) {
-                  n.classList.remove("active");
-                }
-              }
-              break;
-            }
+          if (s.count != 0) {
+            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number active'>" + s.count + "</span></span>";
+          } else {
+            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
           }
         }
-        return;
       }
     }
   }

@@ -235,7 +235,7 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip) {
   mqttClient.subscribe('stoprequests/' + trip.gtfsId);
   // React to MQTT messages
   mqttClient.on("message", function (topic, payload) {
-    //debug("MQTT: '" + [topic, payload].join(": ") + "'");
+    debug("MQTT: '" + [topic, payload].join(": ") + "'");
     require('./UI').updateCounts(JSON.parse(payload).stop_ids, trip);
   });
   //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
