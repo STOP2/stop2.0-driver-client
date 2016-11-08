@@ -97,7 +97,7 @@
 	    `;
 	    for (var t of trips) {
 	      console.log(t);
-	      content = content + '<li><a class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</a></li>'
+	      content = content + '<li><span class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</span></li>'
 	    }
 	    content = content + '</ul>'
 	    document.querySelector(".content").innerHTML = content;
@@ -364,6 +364,8 @@
 	var _Logger = __webpack_require__(3);
 	_Logger.init();
 	var Geom = __webpack_require__(4);
+	var UI = __webpack_require__(1);
+	var Mqtt = __webpack_require__(5);
 
 	var currentTrip;
 	var vehicleID;
@@ -584,13 +586,13 @@
 	};
 
 	NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-	  var mqttClient = __webpack_require__(5).connect("ws://epsilon.fixme.fi:9001");
+	  var mqttClient = Mqtt.connect("ws://epsilon.fixme.fi:9001");
 	  // Subscribe to the trip's MQTT channel
 	  mqttClient.subscribe('stoprequests/' + trip.gtfsId);
 	  // React to MQTT messages
 	  mqttClient.on("message", function (topic, payload) {
 	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
-	    __webpack_require__(1).updateCounts(JSON.parse(payload).stop_ids, trip);
+	    UI.updateCounts(JSON.parse(payload).stop_ids, trip);
 	  });
 	  //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
 	  return trip;

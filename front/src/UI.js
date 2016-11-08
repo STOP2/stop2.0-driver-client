@@ -25,7 +25,7 @@ UI.prototype.initBusList = function() {
     `;
     for (var t of trips) {
       console.log(t);
-      content = content + '<li><a class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</a></li>'
+      content = content + '<li><span class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</span></li>'
     }
     content = content + '</ul>'
     document.querySelector(".content").innerHTML = content;

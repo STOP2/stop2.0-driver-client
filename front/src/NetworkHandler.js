@@ -10,6 +10,8 @@ var NetworkHandler = function(){};
 var _Logger = require('./Logger');
 _Logger.init();
 var Geom = require('./Geometry');
+var UI = require('./UI');
+var Mqtt = require('mqtt');
 
 var currentTrip;
 var vehicleID;
@@ -230,13 +232,13 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
 };
 
 NetworkHandler.prototype.startListeningToMQTT = function(trip) {
-  var mqttClient = require('mqtt').connect("ws://epsilon.fixme.fi:9001");
+  var mqttClient = Mqtt.connect("ws://epsilon.fixme.fi:9001");
   // Subscribe to the trip's MQTT channel
   mqttClient.subscribe('stoprequests/' + trip.gtfsId);
   // React to MQTT messages
   mqttClient.on("message", function (topic, payload) {
     debug("MQTT: '" + [topic, payload].join(": ") + "'");
-    require('./UI').updateCounts(JSON.parse(payload).stop_ids, trip);
+    UI.updateCounts(JSON.parse(payload).stop_ids, trip);
   });
   //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
   return trip;
