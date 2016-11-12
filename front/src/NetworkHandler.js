@@ -9,52 +9,18 @@ NetworkHandler handles all connections to HSL APIs and the backend.
 var NetworkHandler = function(){};
 var _Logger = require('./Logger');
 _Logger.init();
-var Geom = require('./Geometry');
+var Trip = require('./Trip');
 var UI = require('./UI');
 var Mqtt = require('mqtt');
 
-var currentTrip;
-var vehicleID;
 
-NetworkHandler.prototype.init = function(str) {
-  vehicleID = str;
-  return this.getHSLRealTimeAPIData(vehicleID)
+NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
+  return NetworkHandler.prototype.getHSLRealTimeAPIData(trip.veh)
     .then(this.parseHSLRealTimeData)
-    .then(this.getHSLTripData)
-    .then(this.startListeningToMQTT)
-    .then(this.updatePosition)
-    .then(this.setCurrentTrip);
-};
-
-NetworkHandler.prototype.updatePosition = function(trip) {
-  trip.routeIndex = Geom.positionOnRoute(trip, [trip.long, trip.lat]);
-  trip.stopIndex = Geom.nextStopIndex(trip);
-  return trip;
-};
-
-NetworkHandler.prototype.getCurrentVehicleData = function () {
-  return NetworkHandler.prototype.getHSLRealTimeAPIData(vehicleID)
-    .then(this.extractPosition)
-    .catch(function() {return [currentTrip.long, currentTrip.lat]})
-    .then(function (coords) {
-      currentTrip.long = coords[0];
-      currentTrip.lat = coords[1];
-      return currentTrip;
-    }).then(this.updatePosition)
-};
-
-NetworkHandler.prototype.extractPosition = function(str) {
-  var ret = NetworkHandler.prototype.parseHSLRealTimeData(str);
-  return [ret.long, ret.lat]
-};
-
-NetworkHandler.prototype.setCurrentTrip = function(trip) {
-  currentTrip = trip;
-  return trip;
-};
-
-NetworkHandler.prototype.getCurrentTrip = function() {
-  return currentTrip;
+    .then(function (obj) {
+      trip.updatePosition([obj.long, obj.lat], obj.nextStopID)
+      return trip;
+    })
 };
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(vehicleID) {
@@ -102,14 +68,18 @@ NetworkHandler.prototype.getActiveTripsByRouteNum = function(route) {
 function getAll(arr) {
   var result = [];
 
-  //console.log(arr);
   for (var i = 0; i < arr.length; i++) {
-    //console.log(arr[i]);
     result.push(NetworkHandler.prototype.getHSLTripData(arr[i]));
   }
   return Promise.all(result);
 }
 
+/**
+ *
+ * @param filterTest
+ * @param str
+ * @returns {Array} - of Trip instances
+ */
 function parseData(filterTest, str) {
   var a = [];
   var tmp = JSON.parse(str);
@@ -126,13 +96,11 @@ function parseData(filterTest, str) {
       } catch (e) {
         throw new Error("Invalid real time data");
       }
-      if (o.lat === 0 || o.long === 0) {
-        throw new Error("No location in real time data for vehicle " + tmp.veh);
-      }
-      o.start = timeInSeconds(o.start);
-      o.date = mungeDate(o.tst);
+      var sID = key.split('/')[9]; // ID of next stop
+      o.nextStopID = sID === 'undefined'? sID: 'HSL:' + sID;
       o.dir--;
-      a.push(o);
+      var t = new Trip(o);
+      a.push(t);
     }
   }
   return a;
@@ -140,46 +108,22 @@ function parseData(filterTest, str) {
 
 
 NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
+  var stopID;
   var tmpobj = JSON.parse(str);
   try {
+    stopID = Object.keys(tmpobj)[0].split('/')[9];
     tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
   } catch (e) {
     throw new Error("Invalid input data: ")
   }
-  if (tmpobj.lat === 0 || tmpobj.long === 0) {
-    throw new Error("No location data");
-  }
-
-  return {
-    vehicle: tmpobj.veh,
-    line: tmpobj.line,
-    lat: tmpobj.lat,
-    long: tmpobj.long,
-    dir: tmpobj.dir - 1,
-    start: timeInSeconds(tmpobj.start),
-    timeStr: tmpobj.tst,
-    date: mungeDate(tmpobj.tst)
-  }
+  tmpobj.nextStopID = stopID;
+  return tmpobj;
 };
 
-function timeInSeconds(num) {
-  return ((Math.floor(Number.parseInt(num, 10) / 100) * 60) + Number.parseInt(num, 10) % 100) * 60;
-}
 
-function mungeDate(str) {
-  var d = new Date(str);
-  var strDate = d.getFullYear();
-  var m = d.getMonth() + 1;
-  var dt = d.getDate();
-  strDate += m < 10? "0" + m: "" + m;
-  strDate += dt < 10? "0" + dt: "" + dt;
-  return strDate;
-}
-
-NetworkHandler.prototype.getHSLTripData = function(tripData) {
-  //debug(tripData);
+NetworkHandler.prototype.getHSLTripData = function(trip) {
   var queryStr = `{
-      fuzzyTrip(route: "HSL:${tripData.line}", direction: ${tripData.dir}, date: "${tripData.date}", time: ${tripData.start})
+      fuzzyTrip(route: "HSL:${trip.line}", direction: ${trip.dir}, date: "${trip.getDate()}", time: ${trip.startTimeInSecs()})
         {
           gtfsId
           tripHeadsign
@@ -209,14 +153,11 @@ NetworkHandler.prototype.getHSLTripData = function(tripData) {
         if (newTrip === null) {
           reject(Error("Received no data for current trip"));
         }
-        for (var prop in tripData) {
-          if (tripData.hasOwnProperty(prop)) {
-            newTrip[prop] = tripData[prop];
-          }
-        }
-        //debug("Trip loaded from HSL API.");
-        //debug(newTrip);
-        resolve(newTrip);
+        trip.copyProps(newTrip);
+        debug("===== initializing trip");
+        debug(trip);
+        trip.initPosition();
+        resolve(trip);
       } else {
         // If it fails, reject the promise with a error message
         reject(Error('Connection to HSL API failed; error code: ' + req.statusText));
@@ -244,16 +185,6 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip) {
   return trip;
 };
 
-NetworkHandler.prototype.getNextStop = function(trip) {
-  if (!trip.hasOwnProperty("stopIndex")) {
-    trip.stopIndex = 0;
-  }
-  // Increment the stop index by 1 and return the corresponding stop
-  var stop = trip.stopIndex >= trip.stops.length? null: trip.stops[trip.stopIndex++];
-  //debug("Moving to next stop. Stop:");
-  //debug(stop);
-  return stop;
-};
 
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();

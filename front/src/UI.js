@@ -19,31 +19,28 @@ UI.prototype.createInitialUI = function() {
 UI.prototype.initBusList = function() {
   var vehicleId = UI.prototype.hslExtToInt(document.getElementById('route-number').value);
   NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
-    var content = document.querySelector(".content").innerHTML = `
-      <h2>Valitse lähtö</h2>
-      <ul>
-    `;
+    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
+    var ul = document.createElement('ul');
     for (var t of trips) {
-      console.log(t);
-      content = content + '<li><span class="bus-selection-button vehicle-' + t.veh + '">' + UI.prototype.parseHeadsign(t) + ' ' + UI.prototype.parseStartTime(t) + '</span></li>'
+      var li = document.createElement('li');
+      var sp = document.createElement('span');
+      sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
+      sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
+      sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
+      li.appendChild(sp);
+      ul.appendChild(li);
     }
-    content = content + '</ul>'
-    document.querySelector(".content").innerHTML = content;
-    var busSelections = document.getElementsByClassName("bus-selection-button");
-    for (var s of busSelections) {
-      s.addEventListener("click", function() {
-        UI.prototype.initMainView(s.classList[1].split("vehicle-")[1]);
-      })
-    }
+    document.querySelector(".content").appendChild(ul);
   });
 };
 
 // Initialization function
-UI.prototype.initMainView = function(vehicleId) {
+UI.prototype.initMainView = function(trip) {
   debug("*** STOP 2.0 - STARTING INITIALIZATION***");
   UI.prototype.createUI();
-  NwH.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
-  window.setInterval(() => { NwH.getCurrentVehicleData().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
+  UI.prototype.setupHeader(trip);
+  UI.prototype.renderStops(trip);
+  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
 };
 
 UI.prototype.createUI = function() {
@@ -63,30 +60,14 @@ UI.prototype.createUI = function() {
 UI.prototype.setupHeader = function(trip) {
   if (trip) {
     UI.prototype.logInfo(trip); // Selvitä miksei toimi thisillä
-    var tripName = UI.prototype.parseHeadsign(trip);
-    var busNumber = UI.prototype.hslIntToExt(trip.line);
-    var startTime = UI.prototype.parseStartTime(trip);
     // Set the header
-    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + startTime;
+    document.querySelector("h2").innerHTML = trip.getLongName() +
+      " (" + trip.routeNumber() + "), lähtö klo " + trip.startTimeAsString();
   }
-  return trip;
-};
-
-// Parse bus start time
-UI.prototype.parseStartTime = function(trip) {
-  var t = trip.start / 60;
-  var hours = Math.floor(t / 60);
-  if (hours < 10) {
-    hours = "0" + hours;
-  }
-  var minutes = (t % 60);
-  if (minutes < 10) {
-    minutes = "0" + minutes;
-  }
-  return hours + ":" + minutes
 };
 
 
+// FIXME: remove
 UI.prototype.hslIntToExt = function(intNum) {
   if (typeof intNum != 'string') {
     throw new TypeError("Incorrect argument type");
@@ -111,6 +92,7 @@ UI.prototype.hslIntToExt = function(intNum) {
   }
 };
 
+// FIXME: move to Trip
 UI.prototype.hslExtToInt = function(extNum) {
   if (typeof extNum != 'string') {
     throw new TypeError("Incorrect argument type");
@@ -134,20 +116,9 @@ UI.prototype.hslExtToInt = function(extNum) {
   }
 };
 
-// Parse the bus's start and end locations and add them together
-UI.prototype.parseHeadsign = function(trip) {
-  var tripLeft = trip.route.longName.split(" - ")[0];
-  var tripRight = trip.route.longName.split(" - ")[1];
-  if (trip.tripHeadsign == tripLeft) {
-    tripLeft = tripRight;
-    tripRight = trip.tripHeadsign;
-  }
-  return tripLeft + " - " + tripRight;
-};
-
 // General logging
 UI.prototype.logInfo = function(trip) {
-  debug("Bus ID: " + trip.vehicle);
+  debug("Bus ID: " + trip.veh);
   debug("Bus tripId: " + trip.gtfsId);
   debug("Bus direction: " + trip.tripHeadsign);
   debug("Stops:");

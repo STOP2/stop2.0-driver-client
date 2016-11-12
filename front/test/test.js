@@ -22,14 +22,22 @@ describe('NetworkHandler', function() {
     '{"desi":"1506","dir":"2","oper":"XXX","veh":"5495","tst":"2016-11-01T09:59:05.515Z",' +
     '"tsi":1477994345,"spd":0,"lat":0,"long":0,"dl":0,"oday":"XXX","jrn":"XXX","line":"1506","start":"1124"}}}';
 
-  var testTripData = {'vehicle': '1210',
+  var testTripData = {
     'line': '1075',
-    'dir': 1,
     'lat': 60.25511,
     'long': 25.06368,
-    'start': 70920,
-    'timeStr': "2016-10-03T16:52:10.017Z",
-    'date': '20161003'};
+    "desi": "1075",
+    "dir": "2",
+    "dl": 62,
+    "jrn": "XXX",
+    "nextStopID": "1413118",
+    "oday": "XXX",
+    "oper": "XXX",
+    "spd": 1.11,
+    "start": "1942",
+    "tsi": 1475513530,
+    "tst": "2016-10-03T16:52:10.017Z",
+    "veh": "1210"};
 
   var GraphQLResponse = `{
   "data": {
@@ -477,10 +485,6 @@ describe('NetworkHandler', function() {
     it('should throw an error if given invalid input', function () {
       chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, '{"foo": {"bar": "baz"}}')).to.throw(Error);
     });
-
-    it('should throw an error if the result is missing location data', function() {
-        chai.expect(NetworkHandler.parseHSLRealTimeData.bind(NetworkHandler, NOLocation)).to.throw(Error);
-    });
   });
 
   describe.skip('#getHSLTripData', function (done) {
@@ -538,35 +542,6 @@ describe('NetworkHandler', function() {
       var r = NetworkHandler.getHSLRealTimeAPIData("1213");
       requests[0].respond(404, { "Content-Type": "application/html"}, "nopenopenope");
       r.should.eventually.be.rejectedWith(Error).and.notify(done);
-    });
-  });
-
-  describe('#getNextStop', function () {
-    var trip;
-
-    beforeEach(function () {
-      trip = JSON.parse(GraphQLResponse).data.fuzzyTrip;
-    });
-
-    it('first call should return first stop', function(){
-      var s = NetworkHandler.getNextStop(trip);
-      s.should.deep.equal(trip.stops[0]);
-    });
-
-    it('second call should return second stop', function(){
-      var s = NetworkHandler.getNextStop(trip);
-      s = NetworkHandler.getNextStop(trip);
-      s.should.deep.equal(trip.stops[1]);
-    });
-
-    it('return null at the end of trip', function(){
-      var s;
-      var j = trip.stops.length;
-      for (var i = 0; i < j; i++) {
-        s = NetworkHandler.getNextStop(trip);
-      }
-      s = NetworkHandler.getNextStop(trip);
-      expect(s).to.be.null;
     });
   });
 });

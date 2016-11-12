@@ -24,19 +24,31 @@ usage() {
         if [ ! -z "$1" ]; then
                 echo "${progname}: $1" 1>&2
         fi
-        echo "usage: $progname BUS_NUMBER" 1>&2
+        echo "usage: $progname [BUS_NUMBER]" 1>&2
         exit 1
 }
 
 if ! [ `which jq` ]; then
 	err "no jq installed"
 fi
-
-if [ $# -ne 1 ]; then
-	usage 
+if ! [ `which curl` ]; then
+	err "no curl installed"
 fi
 
-LINE=`hsl_int ${1}`
+case $# in
+	0)
+		curl -s http://dev.hsl.fi/hfp/journey/bus/ |
+		jq '.'
+		;;
+	1)
+		LINE=`hsl_int ${1}`
+		curl -s http://dev.hsl.fi/hfp/journey/bus/ |
+		   jq -c ".[].VP | { veh: .veh, line: .line, dir: .dir, start: .start } | select(.line == \"$LINE\")"
+		echo $JQ
+		;;
+	*)
+		usage
+		;;
+esac
+ 
 
-curl -s http://dev.hsl.fi/hfp/journey/bus/ |
-  jq -c ".[].VP | { veh: .veh, line: .line, dir: .dir, start: .start } | select(.line == \"$LINE\")"
