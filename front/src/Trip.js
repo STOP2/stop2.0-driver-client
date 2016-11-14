@@ -6,39 +6,93 @@ function Trip (obj) {
   this.copyProps(obj);
   this.routeIndex = 0;
   this.stopIndex = 0;
+  this.hasStarted = false;
 }
 
 Trip.prototype.updatePosition = function (coords, stopID) {
-  if (coords[0] !== 0 && coords[1] !== 0) { // We have new location data
-    // We're on the route
-    this.long = coords[0];
-    this.lat = coords[1];
-    this.routeIndex = Geom.positionOnRoute(this, coords);
-    if (this.routeIndex !== -1) {
-      this.stopIndex = Geom.nextStopIndex(this);
-      if (this.stopIndex == -1) {
+  if (this.hasStarted) { // We're on route
+    if (coords[0] !== 0 && coords[1] !== 0) {
+      this.long = coords[0];
+      this.lat = coords[1];
+      this.routeIndex = Geom.positionOnRoute(this, coords);
+      if (this.routeIndex == -1) {
         throw new Error("Can't determine position on route");
       }
-    } else {// If current location is not on the route, we could be at the final stop
-      if (Geom.withinRadius(coords, [this.stops[0].lon, this.stops[0].lat], STOP_RADIUS)) {
-        this.routeIndex = 0;
-        this.stopIndex = 0;
+      this.stopIndex = Geom.nextStopIndex(this);
+      if (this.stopIndex == -1) {
+        throw new Error("Can't determine next stop on route");
+      }
+      this.nextStopID = this.stops[this.stopIndex].gtfsId;
+      if (stopID !== 'undefined' && this.getStopIndex(stopID) !== this.stopIndex) {
+        throw new Error("Invalid next stop, expected: " + this.getStopIndex(stopID) + ", actual: " + this.stopIndex +
+          ", stopID: " + stopID);
+      }
+    } else if (stopID !== 'undefined') { // No coords, but we have a stop id
+      // FIXME: check if this can reliably be available
+      debug("stopID: " + stopID);
+      var i = this.getStopIndex(stopID);
+      var st = this.getStop(stopID);
+      var j = Geom.positionOnRoute(this, [st.lon, st.lat]);
+      if (i !== -1 && i >= this.stopIndex && j >= 0 && j > this.routeIndex) {
+        this.stopIndex = i;
+        this.routeIndex = j;
+        this.nextStopID = st.gtfsId;
       } else {
-        throw new Error('Location calculation failure');
+        console.log("Possible invalid stop: " + stopID);
       }
     }
-  } else if (stopID != 'undefined') { // No location, but we have a stop id
-    if (!this.isFirstStop(stopID)) {
-      for (var i = 0; i < this.stops.length - 1; i++) {
-        if (stopID === this.stops[i].gtfsId) {
-          this.stopIndex = i;
-          this.routeIndex = Geom.positionOnRoute(this, [this.stops[i].lon, this.stops[i].lat]);
+
+
+  } else { // Not on route
+    if (coords[0] !== 0 && coords[1] !== 0) {
+      this.long = coords[0];
+      this.lat = coords[1];
+      var d = new Date();
+      var t = Trip.timeInSecs(d.getHours() + "" + d.getMinutes());
+      if ((t - this.startTimeInSecs()) >= 0) { // FIXME: this will break at midnight
+        var i = Geom.positionOnRoute(this, coords);
+        if (i >=0 && ! Geom.withinRadius(coords, [this.stops[0].lon, this.stops[0].lat])) {
+          this.routeIndex = i;
+          this.stopIndex = Geom.nextStopIndex(this);
+          if (this.stopIndex == -1) {
+            throw new Error("Location calculation failure at end stop");
+          }
+          this.hasStarted = true;
+          this.nextStopID = this.stops[this.stopIndex].gtfsId;
+          debug("# on route");
         }
       }
+    } else if (stopID) {
+      var i = this.getStopIndex(stopID);
+      var st = this.stops[i];
+      if (i !== -1) {
+        this.routeIndex = Geom.positionOnRoute(this, [st.lon, st.lat]);
+        if (this.routeIndex === -1) {
+          throw new Error("Cannot initialize trip from stop id " + stopID);
+        }
+        this.stopIndex = i;
+        this.nextStopID = st.gtfsId;
+        this.hasStarted = true;
+      }
     }
-  } else { // No data. Do nothing and hope we get some later.
-    console.log("Warning: location data not available"); // FIXME: throw error?
   }
+};
+
+Trip.prototype.getStopIndex = function(stopID) {
+  if (stopID) {
+    for (var i = 0; i < this.stops.length; i++) {
+      if (stopID === this.stops[i].gtfsId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  console.log("WTF, ! stopID");
+  return -1;
+};
+
+Trip.prototype.getStop = function (stopID) {
+  return this.stops[this.getStopIndex(stopID)]; // undefined, if stop doesn't exist
 };
 
 Trip.prototype.initPosition = function () {
@@ -103,7 +157,12 @@ Trip.prototype.getDate = function () {
 };
 
 Trip.prototype.startTimeInSecs = function () {
-  return ((Math.floor(Number.parseInt(this.start, 10) / 100) * 60) + Number.parseInt(this.start, 10) % 100) * 60;
+  return Trip.timeInSecs(this.start);
+  //return ((Math.floor(Number.parseInt(this.start, 10) / 100) * 60) + Number.parseInt(this.start, 10) % 100) * 60;
+};
+
+Trip.timeInSecs = function (timestr) {
+  return ((Math.floor(Number.parseInt(timestr, 10) / 100) * 60) + Number.parseInt(timestr, 10) % 100) * 60;
 };
 
 Trip.hslExtToInt = function(extNum) {

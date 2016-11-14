@@ -324,6 +324,20 @@ describe('Trip', function () {
       var t = new Trip({'desi':'1075'});
       assert(t.routeNumber() === '75');
     });
+
+    it('should produce correct output given correct input', function() {
+      for (var i = 0; i < intLines.length; i++) {
+        extLines[i].should.equal(Trip.hslIntToExt(intLines[i]));
+      }
+    });
+
+    it('produce an exception when called with a wrong type argument', function() {
+      chai.expect(Trip.prototype.routeNumber.bind(Trip, 553)).to.throw(TypeError);
+    });
+
+    it('produce an exception when called with a wrong argument', function() {
+      chai.expect(Trip.prototype.routeNumber.bind(Trip, '111558')).to.throw(Error);
+    });
   });
 
   describe("#hslExtToInt", function() {
@@ -409,6 +423,28 @@ describe('Trip', function () {
     });
   });
 
+  describe('#getStopIndex', function () {
+    var t = new Trip(testTrip);
+    it('should find correct stop index with correct stop id', function () {
+      t.getStopIndex("HSL:1412133").should.equal(9);
+    });
+
+    it('should not find an index for an invalid stop id', function () {
+      t.getStopIndex('foo').should.equal(-1);
+    });
+  });
+
+  describe('#getStop', function() {
+    var stp = { "gtfsId": "HSL:1382144", "name": "Latokartanontie", "lat": 60.24261330000003, "lon": 25.019986399999997 };
+    var t = new Trip(testTrip);
+    it('should find the correct stop', function () {
+      t.getStop("HSL:1382144").should.deep.equal(stp);
+    });
+    it('should not find anything with an incorrect arg', function () {
+      expect(t.getStop("foo")).to.be.undefined;
+    });
+  });
+
   describe('#initPosition', function () {
 
     it('not on route, location available, no next stop', function () {
@@ -416,6 +452,10 @@ describe('Trip', function () {
       t.long = 25.035327795074164;
       t.lat = 60.27532190185115;
       t.nextStopID = 'undefined';
+      t.hasStarted = false;
+      var d = new Date();
+      d = new Date(d.valueOf() + (60*5));
+      t.start = d.getHours() + "" + d.getMinutes();
       t.initPosition();
       assert(t.routeIndex === 0 && t.stopIndex === 0);
     });
@@ -425,6 +465,10 @@ describe('Trip', function () {
       t.long = 0;
       t.lat = 0;
       t.nextStopID = 'undefined';
+      t.hasStarted = false;
+      var d = new Date();
+      d = new Date(d.valueOf() + (60*5));
+      t.start = d.getHours() + "" + d.getMinutes();
       t.initPosition();
       assert(t.routeIndex === 0 && t.stopIndex === 0);
     });
@@ -434,6 +478,7 @@ describe('Trip', function () {
       t.long = 0;
       t.lat = 0;
       t.nextStopID = 'undefined';
+      t.hasStarted = true;
       t.initPosition();
       assert(t.routeIndex === 0 && t.stopIndex === 0);
     });
@@ -442,6 +487,7 @@ describe('Trip', function () {
       var t = new Trip(testTrip);
       t.long = 25.0502412;
       t.lat = 60.2710521;
+      t.hasStarted = true;
       t.nextStopID = 'undefined';
       t.initPosition();
       t.routeIndex.should.equal(76);
@@ -452,6 +498,7 @@ describe('Trip', function () {
       var t = new Trip(testTrip);
       t.long = 0;
       t.lat = 0;
+      t.hasStarted = true;
       t.nextStopID = "HSL:1413113"; // Jarrutie
       t.initPosition();
       t.routeIndex.should.equal(279);
@@ -462,6 +509,7 @@ describe('Trip', function () {
       var t = new Trip(testTrip);
       t.long = 25.0102108;
       t.lat = 60.2315051;
+      t.hasStarted = true;
       t.nextStopID = "HSL:1383108"; // Pihlajistontie
       t.initPosition();
       t.routeIndex.should.equal(499);

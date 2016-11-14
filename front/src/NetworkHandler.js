@@ -18,7 +18,7 @@ NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
   return NetworkHandler.prototype.getHSLRealTimeAPIData(trip.veh)
     .then(this.parseHSLRealTimeData)
     .then(function (obj) {
-      trip.updatePosition([obj.long, obj.lat], obj.nextStopID)
+      trip.updatePosition([obj.long, obj.lat], obj.nextStopID !== 'undefined'? "HSL:" + obj.nextStopID: obj.nextStopID);
       return trip;
     })
 };
@@ -97,6 +97,10 @@ function parseData(filterTest, str) {
         throw new Error("Invalid real time data");
       }
       var sID = key.split('/')[9]; // ID of next stop
+      // FIXME: check date
+      if (! o.dir || ! o.start) { // .dir, .start and .line are used later
+        continue;
+      }
       o.nextStopID = sID === 'undefined'? sID: 'HSL:' + sID;
       o.dir--;
       var t = new Trip(o);
@@ -154,9 +158,6 @@ NetworkHandler.prototype.getHSLTripData = function(trip) {
           reject(Error("Received no data for current trip"));
         }
         trip.copyProps(newTrip);
-        debug("===== initializing trip");
-        debug(trip);
-        trip.initPosition();
         resolve(trip);
       } else {
         // If it fails, reject the promise with a error message
@@ -172,14 +173,16 @@ NetworkHandler.prototype.getHSLTripData = function(trip) {
   });
 };
 
-NetworkHandler.prototype.startListeningToMQTT = function(trip) {
+NetworkHandler.prototype.startListeningToMQTT = function(trip, func) {
+  debug("Subscribing to mqtt channel");
   var mqttClient = Mqtt.connect("ws://epsilon.fixme.fi:9001");
   // Subscribe to the trip's MQTT channel
   mqttClient.subscribe('stoprequests/' + trip.gtfsId);
   // React to MQTT messages
   mqttClient.on("message", function (topic, payload) {
     debug("MQTT: '" + [topic, payload].join(": ") + "'");
-    UI.updateCounts(JSON.parse(payload).stop_ids, trip);
+    //UI.updateCounts(JSON.parse(payload).stop_ids, trip);
+    func(JSON.parse(payload).stop_ids, trip);
   });
   //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
   return trip;
