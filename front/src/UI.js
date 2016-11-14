@@ -10,11 +10,13 @@ var UI = function(){};
 
 var Trip = require('./Trip');
 var NwH = require('./NetworkHandler');
+var Trip = require('./Trip');
 
 UI.prototype.createInitialUI = function() {
+  UI.prototype.initErrors();
   document.querySelector(".content").innerHTML =
         `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList)
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
 };
 
 UI.prototype.initBusList = function() {
@@ -34,6 +36,22 @@ UI.prototype.initBusList = function() {
     document.querySelector(".content").appendChild(ul);
   });
 };
+
+UI.prototype.initErrors = function() {
+  document.querySelector(".errors").innerHTML = `
+    <div class="error" id="api-data-failed">HSL:n tietoja ei saatu ladattua API:n virheen takia. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
+  `;
+}
+
+UI.prototype.showError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "inline";
+}
+
+UI.prototype.hideError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "none";
+}
 
 // Initialization function
 UI.prototype.initMainView = function(trip) {

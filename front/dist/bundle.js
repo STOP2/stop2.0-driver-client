@@ -55,7 +55,7 @@
 	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
 	window.VISIBLE_FUTURE_STOPS = 10;
 	window.DEBUG_MODE = true;
-	window.UPDATE_INTERVAL = 4000; // milliseconds
+	window.UPDATE_INTERVAL = 2000; // milliseconds
 
 	// Initialization
 	UI.createInitialUI();
@@ -82,11 +82,13 @@
 
 	var Trip = __webpack_require__(2);
 	var NwH = __webpack_require__(4);
+	var Trip = __webpack_require__(2);
 
 	UI.prototype.createInitialUI = function() {
+	  UI.prototype.initErrors();
 	  document.querySelector(".content").innerHTML =
 	        `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList)
+	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
 	};
 
 	UI.prototype.initBusList = function() {
@@ -106,6 +108,22 @@
 	    document.querySelector(".content").appendChild(ul);
 	  });
 	};
+
+	UI.prototype.initErrors = function() {
+	  document.querySelector(".errors").innerHTML = `
+	    <div class="error" id="api-data-failed">HSL:n tietoja ei saatu ladattua API:n virheen takia. Yritetään uudestaan kunnes yhteys toimii.</div>
+	    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
+	    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
+	  `;
+	}
+
+	UI.prototype.showError = function(errorName) {
+	  document.querySelector("#" + errorName).style.display = "inline";
+	}
+
+	UI.prototype.hideError = function(errorName) {
+	  document.querySelector("#" + errorName).style.display = "none";
+	}
 
 	// Initialization function
 	UI.prototype.initMainView = function(trip) {
@@ -655,21 +673,29 @@
 	    req.open('GET', url, true);
 	    req.onload =  function() {
 	      if (req.status === 200 && req.responseText) {
+	        let Ui = __webpack_require__(1);
+
 	        if (req.responseText === '{}') {
+	          Ui.showError("api-data-failed");
 	          throw new Error("No data from real time API");
 	        }
 	        //debug("Real time data loaded from HSL API.");
 	        //debug(JSON.parse(req.responseText));
 	        // If successful, resolve the promise by passing back the request response
+	        Ui.hideError("api-data-failed");
+	        Ui.hideError("api-failed");
+	        Ui.hideError("connection-error");
 	        resolve(req.responseText);
 	      } else {
 	        // If it fails, reject the promise with a error message
+	        Ui.showError("api-failed");
 	        reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
 	      }
 	    };
 	    req.onerror = function() {
 	      // Also deal with the case when the entire request fails to begin with
 	      // This is probably a network error, so reject the promise with an appropriate message
+	      Ui.showError("network-error");
 	      reject(Error('There was a network error.'));
 	    };
 	    req.send();
