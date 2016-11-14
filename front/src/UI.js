@@ -9,15 +9,17 @@ The UI class renders the user interface
 var UI = function(){};
 
 var NwH = require('./NetworkHandler');
+var Trip = require('./Trip');
 
 UI.prototype.createInitialUI = function() {
+  UI.prototype.initErrors();
   document.querySelector(".content").innerHTML =
         `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList)
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
 };
 
 UI.prototype.initBusList = function() {
-  var vehicleId = UI.prototype.hslExtToInt(document.getElementById('route-number').value);
+  var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
   NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
     var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
     var ul = document.createElement('ul');
@@ -33,6 +35,22 @@ UI.prototype.initBusList = function() {
     document.querySelector(".content").appendChild(ul);
   });
 };
+
+UI.prototype.initErrors = function() {
+  document.querySelector(".errors").innerHTML = `
+    <div class="error" id="api-data-failed">HSL:n tietoja ei saatu ladattua API:n virheen takia. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
+  `;
+}
+
+UI.prototype.showError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "inline";
+}
+
+UI.prototype.hideError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "none";
+}
 
 // Initialization function
 UI.prototype.initMainView = function(trip) {
@@ -63,56 +81,6 @@ UI.prototype.setupHeader = function(trip) {
     // Set the header
     document.querySelector("h2").innerHTML = trip.getLongName() +
       " (" + trip.routeNumber() + "), lähtö klo " + trip.startTimeAsString();
-  }
-};
-
-
-// FIXME: remove
-UI.prototype.hslIntToExt = function(intNum) {
-  if (typeof intNum != 'string') {
-    throw new TypeError("Incorrect argument type");
-  }
-
-  if (intNum === '1506') { // FIXME: this shouldn't exist
-    return '506';
-  } else if ((['2512K', '2550', '2550B', '2552', '2554', '2554K'].indexOf(intNum) >= 0)) {
-    return intNum.replace('2','');
-  } else if (['4415', '4415N', '4451', '4519', '4519A', '4520', '4560', '4611', '4611B', '4614',
-      '4615', '4615T', '4615TK', '4615V', '4615VK', '4620', '4665', '4665A'].indexOf(intNum) >= 0) {
-    return intNum.replace('4', '');
-  } else if (['4061', '4061V'].indexOf(intNum) >= 0) {
-    return intNum.replace('40', '');
-  } else if (['1001', '1001A', '1002', '1002X', '1003', '1003X', '1004', '1004T', '1005',
-      '1006', '1006T', '1006X', '1007A', '1007B', '1007X', '1008', '1009', '1009X'].indexOf(intNum) >= 0) {
-    return intNum.replace('100', '');
-  } else if (/^10[0-9][0-9][^0-9]*$/.exec(intNum)) {
-    return intNum.replace('10', '');
-  } else {
-    throw new Error("Unknown argument");
-  }
-};
-
-// FIXME: move to Trip
-UI.prototype.hslExtToInt = function(extNum) {
-  if (typeof extNum != 'string') {
-    throw new TypeError("Incorrect argument type");
-  }
-  if (extNum === '506') { // FIXME: this shouldn't exist
-    return '1' + extNum;
-  } else  if (['512K', '550', '550B', '552', '554', '554K'].indexOf(extNum) >= 0) {
-    return '2' + extNum;
-  } else if (['415', '415N', '451', '519', '519A', '520', '560', '611', '611B', '614',
-          '615', '615T', '615TK', '615V', '615VK', '620', '665', '665A'].indexOf(extNum) >= 0) {
-    return '4' + extNum;
-  } else if (['61', '61V'].indexOf(extNum) >= 0) {
-    return '40' + extNum;
-  } else if (['1', '1A', '2', '2X', '3', '3X', '4', '4T', '5',
-      '6', '6T', '6X', '7A', '7B', '7X', '8', '9', '9X'].indexOf(extNum) >= 0) {
-    return '100' + extNum;
-  } else if (/^[0-9][0-9][^0-9]*$/.exec(extNum)) {
-    return '10' + extNum;
-  } else {
-    throw new Error("Unknown argument");
   }
 };
 
