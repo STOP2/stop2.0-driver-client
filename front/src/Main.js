@@ -10,9 +10,13 @@ window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphq
 window.VISIBLE_FUTURE_STOPS = 10;
 window.DEBUG_MODE = true;
 window.UPDATE_INTERVAL = 2000; // milliseconds
+window.RUNNING_IN_NODE = typeof module !== 'undefined' && module.exports;
 
 // Initialization
-UI.createInitialUI();
+if (!RUNNING_IN_NODE) {
+  UI.createInitialUI();
+}
+
 Logger.init();
 
 // Temp function to "move" to the next stop

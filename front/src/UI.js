@@ -49,7 +49,7 @@ UI.prototype.showError = function(errorName) {
 };
 
 UI.prototype.hideError = function(errorName) {
-  docu  ment.querySelector("#" + errorName).style.display = "none";
+  document.querySelector("#" + errorName).style.display = "none";
 };
 
 // Initialization function
@@ -215,4 +215,6 @@ UI.prototype.updateCounts = function(payload, trip) {
   }
 };
 
-module.exports = new UI();
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = new UI();
+}
