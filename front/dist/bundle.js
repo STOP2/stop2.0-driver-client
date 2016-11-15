@@ -49,6 +49,7 @@
 	var UI = __webpack_require__(2);
 	var NwH = __webpack_require__(5);
 	var Logger = __webpack_require__(6);
+	var Trip = __webpack_require__(3);
 
 	// Global constants
 	if (typeof window !== 'undefined') {
@@ -67,23 +68,21 @@
 	  global.RUNNING_IN_NODE = false;
 	}
 
-	console.log(global);
-	console.log(global.RUNNING_IN_NODE);
-
 	// Initialization
-	if (!RUNNING_IN_NODE) {
+
+	Logger.init();
+
+	if (!global.RUNNING_IN_NODE) {
 	  UI.createInitialUI();
 	}
 
-	if (RUNNING_IN_NODE) {
+	if (global.RUNNING_IN_NODE) {
 	  console.log("Node detected, running Node version.");
-	  NwH.getActiveTripsByRouteNum(process.argv[2]).then((trips) => {
+	  NwH.getActiveTripsByRouteNum(Trip.hslExtToInt(process.argv[2])).then((trips) => {
 	    NwH.startListeningToMQTT(trip, null);
-	    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip) });
+	    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)() });
 	  });
 	}
-
-	Logger.init();
 
 	// Temp function to "move" to the next stop
 
@@ -511,9 +510,7 @@
 	  }
 	};
 
-	if (typeof module !== 'undefined' && module.exports) {
-	  module.exports = new UI();
-	}
+	module.exports = new UI();
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
@@ -922,6 +919,7 @@
 	};
 
 	NetworkHandler.prototype.getActiveTripsByRouteNum = function(route) {
+	  console.log(route);
 	  var testfunc = function(route) {
 	    return function (key) {
 	      return (key.split('/')[5] === route);

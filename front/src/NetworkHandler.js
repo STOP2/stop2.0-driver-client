@@ -62,7 +62,7 @@ NetworkHandler.prototype.getActiveTripsByRouteNum = function(route) {
   var a = NetworkHandler.prototype.getHSLRealTimeAPIData('')
     .then(parseData.bind(null, testfunc))
     .then(getAll);
-  //console.log(a);
+  console.log(a);
   return a;
 };
 

@@ -3,6 +3,7 @@
 var UI = require('./UI');
 var NwH = require('./NetworkHandler');
 var Logger = require('./Logger');
+var Trip = require('./Trip');
 
 // Global constants
 if (typeof window !== 'undefined') {
@@ -31,7 +32,8 @@ if (!global.RUNNING_IN_NODE) {
 
 if (global.RUNNING_IN_NODE) {
   console.log("Node detected, running Node version.");
-  NwH.getActiveTripsByRouteNum(process.argv[2]).then((trips) => {
+  NwH.getActiveTripsByRouteNum(Trip.hslExtToInt(process.argv[2])).then((trips) => {
+    console.log("Promise resolved");
     NwH.startListeningToMQTT(trip, null);
     setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)() });
   });
