@@ -10,7 +10,6 @@ var UI = function(){};
 
 var Trip = require('./Trip');
 var NwH = require('./NetworkHandler');
-var Trip = require('./Trip');
 
 UI.prototype.createInitialUI = function() {
   UI.prototype.initErrors();
@@ -43,15 +42,15 @@ UI.prototype.initErrors = function() {
     <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
     <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
   `;
-}
+};
 
 UI.prototype.showError = function(errorName) {
   document.querySelector("#" + errorName).style.display = "inline";
-}
+};
 
 UI.prototype.hideError = function(errorName) {
-  document.querySelector("#" + errorName).style.display = "none";
-}
+  docu  ment.querySelector("#" + errorName).style.display = "none";
+};
 
 // Initialization function
 UI.prototype.initMainView = function(trip) {
