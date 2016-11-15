@@ -1,6 +1,7 @@
 "use strict";
 
 var UI = require('./UI');
+var NwH = require('./NetworkHandler');
 var Logger = require('./Logger');
 
 // Global constants
@@ -16,6 +17,15 @@ window.RUNNING_IN_NODE = typeof module !== 'undefined' && module.exports;
 if (!RUNNING_IN_NODE) {
   UI.createInitialUI();
 }
+
+NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
+  if (!RUNNING_IN_NODE) {
+    UI.updateBusList();
+  } else {
+    NwH.startListeningToMQTT(trip, null);
+    window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)() };
+  }
+});
 
 Logger.init();
 

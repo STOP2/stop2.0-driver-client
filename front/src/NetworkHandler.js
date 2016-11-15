@@ -190,7 +190,9 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip, func) {
   mqttClient.on("message", function (topic, payload) {
     debug("MQTT: '" + [topic, payload].join(": ") + "'");
     //UI.updateCounts(JSON.parse(payload).stop_ids, trip);
-    func(JSON.parse(payload).stop_ids, trip);
+    if (func != null) {
+      func(JSON.parse(payload).stop_ids, trip);
+    }
   });
   //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
   return trip;
