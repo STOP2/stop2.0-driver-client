@@ -10,7 +10,7 @@ var NetworkHandler = function(){};
 var _Logger = require('./Logger');
 _Logger.init();
 var Trip = require('./Trip');
-var UI = require('./UI');
+//var UI = require('./UI');
 var Mqtt = require('mqtt');
 
 
@@ -30,29 +30,22 @@ NetworkHandler.prototype.getHSLRealTimeAPIData = function(vehicleID) {
     req.open('GET', url, true);
     req.onload =  function() {
       if (req.status === 200 && req.responseText) {
-        let Ui = require('./UI');
-
         if (req.responseText === '{}') {
-          Ui.showError("api-data-failed");
-          throw new Error("No data from real time API");
+          //throw new Error("No data from real time API");
+          reject(Error("No data from real time API"));
         }
         //debug("Real time data loaded from HSL API.");
         //debug(JSON.parse(req.responseText));
         // If successful, resolve the promise by passing back the request response
-        Ui.hideError("api-data-failed");
-        Ui.hideError("api-failed");
-        Ui.hideError("connection-error");
         resolve(req.responseText);
       } else {
         // If it fails, reject the promise with a error message
-        Ui.showError("api-failed");
         reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
       }
     };
     req.onerror = function() {
       // Also deal with the case when the entire request fails to begin with
       // This is probably a network error, so reject the promise with an appropriate message
-      Ui.showError("network-error");
       reject(Error('There was a network error.'));
     };
     req.send();

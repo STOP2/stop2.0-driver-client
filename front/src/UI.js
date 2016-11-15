@@ -49,7 +49,7 @@ UI.prototype.showError = function(errorName) {
 };
 
 UI.prototype.hideError = function(errorName) {
-  docu  ment.querySelector("#" + errorName).style.display = "none";
+  document.querySelector("#" + errorName).style.display = "none";
 };
 
 // Initialization function
@@ -59,7 +59,17 @@ UI.prototype.initMainView = function(trip) {
   NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
   UI.prototype.setupHeader(trip);
   UI.prototype.renderStops(trip);
-  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
+  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
+    .catch(function (e) {
+      debug.error(e.message);
+      if (e.message.startsWith("No data")) {
+        UI.prototype.showError("api-data-failed");
+      } else if (e.message.startsWith("Connection to HSL")) {
+        UI.prototype.showError("api-failed");
+      } else if (e.message.startsWith("There was")) {
+        UI.prototype.showError("network-error");
+      }
+    }) }, window.UPDATE_INTERVAL);
 };
 
 UI.prototype.createUI = function() {
@@ -113,6 +123,9 @@ UI.prototype.renderStops = function(trip) {
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
+  UI.prototype.hideError("api-data-failed");
+  UI.prototype.hideError("api-failed");
+  UI.prototype.hideError("connection-error");
   debug("### coordinates: " + trip.lat + "," + trip.long + ", next stop: " + trip.nextStopID);
   UI.prototype.resetIfLastStop(trip);
   // First hide the stops that are not supposed to be shown yet

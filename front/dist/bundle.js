@@ -82,7 +82,6 @@
 
 	var Trip = __webpack_require__(2);
 	var NwH = __webpack_require__(4);
-	var Trip = __webpack_require__(2);
 
 	UI.prototype.createInitialUI = function() {
 	  UI.prototype.initErrors();
@@ -115,15 +114,15 @@
 	    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
 	    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
 	  `;
-	}
+	};
 
 	UI.prototype.showError = function(errorName) {
 	  document.querySelector("#" + errorName).style.display = "inline";
-	}
+	};
 
 	UI.prototype.hideError = function(errorName) {
 	  document.querySelector("#" + errorName).style.display = "none";
-	}
+	};
 
 	// Initialization function
 	UI.prototype.initMainView = function(trip) {
@@ -132,7 +131,17 @@
 	  NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
 	  UI.prototype.setupHeader(trip);
 	  UI.prototype.renderStops(trip);
-	  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
+	  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
+	    .catch(function (e) {
+	      debug.error(e.message);
+	      if (e.message.startsWith("No data")) {
+	        UI.prototype.showError("api-data-failed");
+	      } else if (e.message.startsWith("Connection to HSL")) {
+	        UI.prototype.showError("api-failed");
+	      } else if (e.message.startsWith("There was")) {
+	        UI.prototype.showError("network-error");
+	      }
+	    }) }, window.UPDATE_INTERVAL);
 	};
 
 	UI.prototype.createUI = function() {
@@ -186,6 +195,9 @@
 
 	// Update the stop element highlights
 	UI.prototype.updateStops = function(trip) {
+	  UI.prototype.hideError("api-data-failed");
+	  UI.prototype.hideError("api-failed");
+	  UI.prototype.hideError("connection-error");
 	  debug("### coordinates: " + trip.lat + "," + trip.long + ", next stop: " + trip.nextStopID);
 	  UI.prototype.resetIfLastStop(trip);
 	  // First hide the stops that are not supposed to be shown yet
@@ -653,7 +665,7 @@
 	var _Logger = __webpack_require__(5);
 	_Logger.init();
 	var Trip = __webpack_require__(2);
-	var UI = __webpack_require__(1);
+	//var UI = require('./UI');
 	var Mqtt = __webpack_require__(6);
 
 
@@ -673,29 +685,22 @@
 	    req.open('GET', url, true);
 	    req.onload =  function() {
 	      if (req.status === 200 && req.responseText) {
-	        let Ui = __webpack_require__(1);
-
 	        if (req.responseText === '{}') {
-	          Ui.showError("api-data-failed");
-	          throw new Error("No data from real time API");
+	          //throw new Error("No data from real time API");
+	          reject(Error("No data from real time API"));
 	        }
 	        //debug("Real time data loaded from HSL API.");
 	        //debug(JSON.parse(req.responseText));
 	        // If successful, resolve the promise by passing back the request response
-	        Ui.hideError("api-data-failed");
-	        Ui.hideError("api-failed");
-	        Ui.hideError("connection-error");
 	        resolve(req.responseText);
 	      } else {
 	        // If it fails, reject the promise with a error message
-	        Ui.showError("api-failed");
 	        reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
 	      }
 	    };
 	    req.onerror = function() {
 	      // Also deal with the case when the entire request fails to begin with
 	      // This is probably a network error, so reject the promise with an appropriate message
-	      Ui.showError("network-error");
 	      reject(Error('There was a network error.'));
 	    };
 	    req.send();
