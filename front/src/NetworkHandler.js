@@ -12,7 +12,7 @@ _Logger.init();
 var Trip = require('./Trip');
 //var UI = require('./UI');
 var Mqtt = require('mqtt');
-
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
   return NetworkHandler.prototype.getHSLRealTimeAPIData(trip.veh)
