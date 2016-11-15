@@ -21,23 +21,21 @@ if (typeof window === 'undefined') {
   global.RUNNING_IN_NODE = false;
 }
 
-console.log(global);
-console.log(global.RUNNING_IN_NODE);
-
 // Initialization
-if (!RUNNING_IN_NODE) {
+
+Logger.init();
+
+if (!global.RUNNING_IN_NODE) {
   UI.createInitialUI();
 }
 
-if (RUNNING_IN_NODE) {
+if (global.RUNNING_IN_NODE) {
   console.log("Node detected, running Node version.");
   NwH.getActiveTripsByRouteNum(process.argv[2]).then((trips) => {
     NwH.startListeningToMQTT(trip, null);
-    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip) });
+    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)() });
   });
 }
-
-Logger.init();
 
 // Temp function to "move" to the next stop
 
