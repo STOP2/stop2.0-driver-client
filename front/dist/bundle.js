@@ -44,34 +44,244 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	/* WEBPACK VAR INJECTION */(function(global, process) {"use strict";
 
-	var UI = __webpack_require__(1);
-	var Logger = __webpack_require__(5);
+	var UI = __webpack_require__(2);
+	var NwH = __webpack_require__(5);
+	var Logger = __webpack_require__(6);
 
 	// Global constants
-	window.STOP_API = "http://stop20.herokuapp.com";
-	window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
-	window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
-	window.VISIBLE_FUTURE_STOPS = 10;
-	window.DEBUG_MODE = true;
-	window.UPDATE_INTERVAL = 2000; // milliseconds
+	if (typeof window !== 'undefined') {
+	  global = window;
+	}
+	global.STOP_API = "http://stop20.herokuapp.com";
+	global.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
+	global.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
+	global.VISIBLE_FUTURE_STOPS = 10;
+	global.DEBUG_MODE = true;
+	global.UPDATE_INTERVAL = 2000; // milliseconds
+
+	if (typeof window === 'undefined') {
+	  global.RUNNING_IN_NODE = true;
+	} else {
+	  global.RUNNING_IN_NODE = false;
+	}
+
+	console.log(global);
+	console.log(global.RUNNING_IN_NODE);
 
 	// Initialization
-	UI.createInitialUI();
+	if (!RUNNING_IN_NODE) {
+	  UI.createInitialUI();
+	}
+
+	if (RUNNING_IN_NODE) {
+	  console.log("Node detected, running Node version.");
+	  NwH.getActiveTripsByRouteNum(process.argv[2]).then((trips) => {
+	    NwH.startListeningToMQTT(trip, null);
+	    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip) });
+	  });
+	}
+
 	Logger.init();
 
 	// Temp function to "move" to the next stop
 
 	//window.simulateNextStop = simulateNextStop;
 
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(1)))
 
 /***/ },
 /* 1 */
+/***/ function(module, exports) {
+
+	// shim for using process in browser
+	var process = module.exports = {};
+
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
+	(function () {
+	    try {
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
+	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
+	    }
+	    try {
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
+	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
+	    }
+	} ())
+	function runTimeout(fun) {
+	    if (cachedSetTimeout === setTimeout) {
+	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
+	        return setTimeout(fun, 0);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedSetTimeout(fun, 0);
+	    } catch(e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+	            return cachedSetTimeout.call(null, fun, 0);
+	        } catch(e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+	            return cachedSetTimeout.call(this, fun, 0);
+	        }
+	    }
+
+
+	}
+	function runClearTimeout(marker) {
+	    if (cachedClearTimeout === clearTimeout) {
+	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
+	        return clearTimeout(marker);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedClearTimeout(marker);
+	    } catch (e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+	            return cachedClearTimeout.call(null, marker);
+	        } catch (e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+	            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+	            return cachedClearTimeout.call(this, marker);
+	        }
+	    }
+
+
+
+	}
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+
+	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
+	}
+
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = runTimeout(cleanUpNextTick);
+	    draining = true;
+
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    runClearTimeout(timeout);
+	}
+
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        runTimeout(drainQueue);
+	    }
+	};
+
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+
+	function noop() {}
+
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
+
+
+/***/ },
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-<<<<<<< HEAD
-	"use strict";
+	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
 	/*
 
@@ -81,17 +291,17 @@
 
 	var UI = function(){};
 
-	var Trip = __webpack_require__(2);
-	var NwH = __webpack_require__(4);
+	var Trip = __webpack_require__(3);
+	var NwH = __webpack_require__(5);
 
 	UI.prototype.createInitialUI = function() {
 	  UI.prototype.initErrors();
 	  document.querySelector(".content").innerHTML =
 	        `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
+	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.updateBusList);
 	};
 
-	UI.prototype.initBusList = function() {
+	UI.prototype.updateBusList = function() {
 	  var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
 	  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
 	    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
@@ -132,7 +342,7 @@
 	  NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
 	  UI.prototype.setupHeader(trip);
 	  UI.prototype.renderStops(trip);
-	  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
+	  setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
 	    .catch(function (e) {
 	      debug.error(e.message);
 	      if (e.message.startsWith("No data")) {
@@ -142,7 +352,7 @@
 	      } else if (e.message.startsWith("There was")) {
 	        UI.prototype.showError("network-error");
 	      }
-	    }) }, window.UPDATE_INTERVAL);
+	    }) }, global.UPDATE_INTERVAL);
 	};
 
 	UI.prototype.createUI = function() {
@@ -301,238 +511,19 @@
 	  }
 	};
 
-	module.exports = new UI();
-=======
-	"use strict";
-
-	/*
-
-	The UI class renders the user interface
-
-	*/
-
-	var UI = function(){};
-
-	var Trip = __webpack_require__(2);
-	var NwH = __webpack_require__(4);
-
-	UI.prototype.createInitialUI = function() {
-	  UI.prototype.initErrors();
-	  document.querySelector(".content").innerHTML =
-	        `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-	  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
-	};
-
-	UI.prototype.initBusList = function() {
-	  var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
-	  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
-	    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
-	    var ul = document.createElement('ul');
-	    for (var t of trips) {
-	      var li = document.createElement('li');
-	      var sp = document.createElement('span');
-	      sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
-	      sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
-	      sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
-	      li.appendChild(sp);
-	      ul.appendChild(li);
-	    }
-	    document.querySelector(".content").appendChild(ul);
-	  });
-	};
-
-	UI.prototype.initErrors = function() {
-	  document.querySelector(".errors").innerHTML = `
-	    <div class="error" id="api-data-failed">HSL:n tietoja ei saatu ladattua API:n virheen takia. Yritetään uudestaan kunnes yhteys toimii.</div>
-	    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
-	    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
-	  `;
-	};
-
-	UI.prototype.showError = function(errorName) {
-	  document.querySelector("#" + errorName).style.display = "inline";
-	};
-
-	UI.prototype.hideError = function(errorName) {
-	  document.querySelector("#" + errorName).style.display = "none";
-	};
-
-	// Initialization function
-	UI.prototype.initMainView = function(trip) {
-	  debug("*** STOP 2.0 - STARTING INITIALIZATION***");
-	  UI.prototype.createUI();
-	  NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
-	  UI.prototype.setupHeader(trip);
-	  UI.prototype.renderStops(trip);
-	  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops) }, window.UPDATE_INTERVAL);
-	};
-
-	UI.prototype.createUI = function() {
-	  // Create the base HTML
-	  document.querySelector(".content").innerHTML = `
-	        <h2>Pysäkit</h2>
-	        <ul class="stop-list"></ul>
-	        <br />
-	        <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
-	  // Add a listener to the driver button
-	  document.querySelector(".driver-button").addEventListener("click", function() {
-	    NwH.postDriverButton();
-	  });
-	};
-
-	// Setup the header
-	UI.prototype.setupHeader = function(trip) {
-	  if (trip) {
-	    UI.prototype.logInfo(trip); // Selvitä miksei toimi thisillä
-	    debug(trip);
-	    trip.initPosition();
-	    // Set the header
-	    document.querySelector("h2").innerHTML = trip.getLongName() +
-	      " (" + trip.routeNumber() + "), lähtö klo " + trip.startTimeAsString();
-	  }
-	};
-
-	// General logging
-	UI.prototype.logInfo = function(trip) {
-	  debug("Bus ID: " + trip.veh);
-	  debug("Bus tripId: " + trip.gtfsId);
-	  debug("Bus direction: " + trip.tripHeadsign);
-	  debug("Stops:");
-	  debug(trip.stops);
-	};
-
-	// Create the stop elements
-	UI.prototype.renderStops = function(trip) {
-	  var stopList = document.querySelector(".stop-list");
-	  for (var s of trip.stops) {
-	    s.count = 0;
-	    var item = document.createElement("li");
-	    item.classList.add("stop-" + s.gtfsId);
-	    item.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
-	    stopList.appendChild(item);
-	    s.node = item;
-	  }
-	  debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
-	  UI.prototype.updateStops(trip);
-	};
-
-	// Update the stop element highlights
-	UI.prototype.updateStops = function(trip) {
-	  debug("### coordinates: " + trip.lat + "," + trip.long + ", next stop: " + trip.nextStopID);
-	  UI.prototype.resetIfLastStop(trip);
-	  // First hide the stops that are not supposed to be shown yet
-	  for (var s of trip.stops) {
-	    UI.prototype.hideOrShowNode(s, trip);
-	    // Remove unnecessary classes
-	    UI.prototype.cleanStops(s);
-	    // Highlight the next stop
-	    if (trip.stopIndex == trip.stops.indexOf(s)) {
-	      UI.prototype.highlightNextStop(s);
-	    }
-	    // Highlight the previous stop
-	    else if (trip.stopIndex == trip.stops.indexOf(s) + 1) {
-	      UI.prototype.highlightPreviousStop(s);
-	    }
-	  }
-	};
-
-	UI.prototype.resetIfLastStop = function (trip) {
-	  if (trip.stopIndex == trip.stops.length - 1) {
-	    window.location.reload();
-	  }
-	};
-
-	// Hide or show the stop
-	UI.prototype.hideOrShowNode = function(s, trip) {
-	  if (trip.stopIndex - 1 <= trip.stops.indexOf(s) && trip.stopIndex + VISIBLE_FUTURE_STOPS >= trip.stops.indexOf(s)) {
-	    if (s.node.classList.contains("hidden")) {
-	      s.node.classList.remove("hidden");
-	    }
-	  } else {
-	    if (!s.node.classList.contains("hidden")) {
-	      s.node.classList.add("hidden");
-	    }
-	  }
-	};
-
-	// Highlight the next stop
-	UI.prototype.highlightNextStop = function(s) {
-	  for (var n of s.node.childNodes) {
-	    if (n.classList.contains("current-stop-marker")) {
-	      if (!n.classList.contains("current")) {
-	        n.classList.add("current");
-	        n.innerHTML = 'SEURAAVA';
-	        s.node.classList.add("current");
-	      }
-	    }
-	  }
-	};
-
-	// Highlight the previous stop
-	UI.prototype.highlightPreviousStop = function(s) {
-	  for (var n of s.node.childNodes) {
-	    if (n.classList.contains("current-stop-marker")) {
-	      if (!n.classList.contains("previous")) {
-	        n.classList.add("previous");
-	        n.innerHTML = 'EDELLINEN';
-	        s.node.classList.add("previous");
-	      }
-	    }
-	  }
-	};
-
-	// Clean the marker classes from the selected node
-	UI.prototype.cleanStops = function(s) {
-	  for (var n of s.node.childNodes) {
-	    if (n.classList.contains("current-stop-marker")) {
-	      if (n.classList.contains("current")) {
-	        n.classList.remove("current");
-	        n.innerHTML = '';
-	        s.node.classList.remove("current");
-	      }
-	      if (n.classList.contains("previous")) {
-	        n.classList.remove("previous");
-	        n.innerHTML = '';
-	        s.node.classList.remove("previous");
-	      }
-	    }
-	  }
-	};
-
-	// Update the stop element counts
-	UI.prototype.updateCounts = function(payload, trip) {
-	  for (var s of trip.stops) {
-	    for (var p of payload) {
-	      if (s.gtfsId == p.id) {
-	        // Change the count
-	        var origCount = s.count;
-	        s.count = p.passengers;
-	        // If the count changed, play the highlight effect and add the correct classes
-	        if (origCount != s.count) {
-	          if (s.count != 0) {
-	            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number active'>" + s.count + "</span></span>";
-	          } else {
-	            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
-	          }
-	        }
-	      }
-	    }
-	  }
-	};
-
-	if (document) {
+	if (typeof module !== 'undefined' && module.exports) {
 	  module.exports = new UI();
 	}
->>>>>>> aa6c22fd6518f5820f4c70e56d44d8bc0244bf6e
 
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const STOP_RADIUS = 0.002;
-	var Geom = __webpack_require__(3);
+	var Geom = __webpack_require__(4);
 
 	function Trip (obj) {
 	  this.copyProps(obj);
@@ -747,7 +738,7 @@
 	module.exports = Trip;
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -873,11 +864,10 @@
 	module.exports = new Geometry();
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-<<<<<<< HEAD
-	"use strict";
+	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
 	/*
 
@@ -886,11 +876,11 @@
 	*/
 
 	var NetworkHandler = function(){};
-	var _Logger = __webpack_require__(5);
+	var _Logger = __webpack_require__(6);
 	_Logger.init();
-	var Trip = __webpack_require__(2);
+	var Trip = __webpack_require__(3);
 	//var UI = require('./UI');
-	var Mqtt = __webpack_require__(6);
+	var Mqtt = __webpack_require__(7);
 
 
 	NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
@@ -903,7 +893,7 @@
 	};
 
 	NetworkHandler.prototype.getHSLRealTimeAPIData = function(vehicleID) {
-	  var url = RT_API_URL + (vehicleID? vehicleID + '/': '');
+	  var url = global.RT_API_URL + (vehicleID? vehicleID + '/': '');
 	  return new Promise(function (resolve, reject) {
 	    var req = new XMLHttpRequest();
 	    req.open('GET', url, true);
@@ -1028,7 +1018,7 @@
 	    }`;
 	  return new Promise(function (resolve, reject) {
 	    var req = new XMLHttpRequest();
-	    req.open("POST", HSL_API, true);
+	    req.open("POST", global.HSL_API, true);
 	    req.setRequestHeader("Content-type", "application/graphql");
 	    req.onload =  function() {
 	      if (req.status === 200 && req.responseText) {
@@ -1062,7 +1052,9 @@
 	  mqttClient.on("message", function (topic, payload) {
 	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
 	    //UI.updateCounts(JSON.parse(payload).stop_ids, trip);
-	    func(JSON.parse(payload).stop_ids, trip);
+	    if (func != null) {
+	      func(JSON.parse(payload).stop_ids, trip);
+	    }
 	  });
 	  //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
 	  return trip;
@@ -1071,7 +1063,7 @@
 
 	NetworkHandler.prototype.postDriverButton = function() {
 	  var xhttp = new XMLHttpRequest();
-	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
+	  xhttp.open("POST", global.STOP_API + "/stoprequests/report", true);
 	  // Send the last stop's id and the trip's id to backend
 	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex-1].gtfsId + '"}';
 	  xhttp.send(msg);
@@ -1079,221 +1071,11 @@
 	};
 
 	module.exports = new NetworkHandler();
-=======
-	"use strict";
 
-	/*
-
-	NetworkHandler handles all connections to HSL APIs and the backend.
-
-	*/
-
-	var NetworkHandler = function(){};
-	var _Logger = __webpack_require__(5);
-	_Logger.init();
-	var Trip = __webpack_require__(2);
-	var UI = __webpack_require__(1);
-	var Mqtt = __webpack_require__(6);
-
-
-	NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
-	  return NetworkHandler.prototype.getHSLRealTimeAPIData(trip.veh)
-	    .then(this.parseHSLRealTimeData)
-	    .then(function (obj) {
-	      trip.updatePosition([obj.long, obj.lat], obj.nextStopID !== 'undefined'? "HSL:" + obj.nextStopID: obj.nextStopID);
-	      return trip;
-	    })
-	};
-
-	NetworkHandler.prototype.getHSLRealTimeAPIData = function(vehicleID) {
-	  var url = RT_API_URL + (vehicleID? vehicleID + '/': '');
-	  return new Promise(function (resolve, reject) {
-	    var req = new XMLHttpRequest();
-	    req.open('GET', url, true);
-	    req.onload =  function() {
-	      if (req.status === 200 && req.responseText) {
-	        let Ui = __webpack_require__(1);
-
-	        if (req.responseText === '{}') {
-	          Ui.showError("api-data-failed");
-	          throw new Error("No data from real time API");
-	        }
-	        //debug("Real time data loaded from HSL API.");
-	        //debug(JSON.parse(req.responseText));
-	        // If successful, resolve the promise by passing back the request response
-	        Ui.hideError("api-data-failed");
-	        Ui.hideError("api-failed");
-	        Ui.hideError("connection-error");
-	        resolve(req.responseText);
-	      } else {
-	        // If it fails, reject the promise with a error message
-	        Ui.showError("api-failed");
-	        reject(Error('Connection to HSL real time API failed; error code:' + req.statusText));
-	      }
-	    };
-	    req.onerror = function() {
-	      // Also deal with the case when the entire request fails to begin with
-	      // This is probably a network error, so reject the promise with an appropriate message
-	      Ui.showError("network-error");
-	      reject(Error('There was a network error.'));
-	    };
-	    req.send();
-	  });
-	};
-
-	NetworkHandler.prototype.getActiveTripsByRouteNum = function(route) {
-	  var testfunc = function(route) {
-	    return function (key) {
-	      return (key.split('/')[5] === route);
-	    }
-	  }(route);
-
-	  var a = NetworkHandler.prototype.getHSLRealTimeAPIData('')
-	    .then(parseData.bind(null, testfunc))
-	    .then(getAll);
-	  //console.log(a);
-	  return a;
-	};
-
-	function getAll(arr) {
-	  var result = [];
-
-	  for (var i = 0; i < arr.length; i++) {
-	    result.push(NetworkHandler.prototype.getHSLTripData(arr[i]));
-	  }
-	  return Promise.all(result);
-	}
-
-	/**
-	 *
-	 * @param filterTest
-	 * @param str
-	 * @returns {Array} - of Trip instances
-	 */
-	function parseData(filterTest, str) {
-	  var a = [];
-	  var tmp = JSON.parse(str);
-	  var o;
-
-	  if (Object.getOwnPropertyNames(tmp).length === 0) { // Empty object
-	    throw new Error("No real time data");
-	  }
-
-	  for (var key in tmp) {
-	    if (filterTest(key)) {
-	      try {
-	        o = tmp[key]["VP"];
-	      } catch (e) {
-	        throw new Error("Invalid real time data");
-	      }
-	      var sID = key.split('/')[9]; // ID of next stop
-	      // FIXME: check date
-	      if (! o.dir || ! o.start) { // .dir, .start and .line are used later
-	        continue;
-	      }
-	      o.nextStopID = sID === 'undefined'? sID: 'HSL:' + sID;
-	      o.dir--;
-	      var t = new Trip(o);
-	      a.push(t);
-	    }
-	  }
-	  return a;
-	}
-
-
-	NetworkHandler.prototype.parseHSLRealTimeData = function(str) {
-	  var stopID;
-	  var tmpobj = JSON.parse(str);
-	  try {
-	    stopID = Object.keys(tmpobj)[0].split('/')[9];
-	    tmpobj = tmpobj[Object.keys(tmpobj)[0]]["VP"];
-	  } catch (e) {
-	    throw new Error("Invalid input data: ")
-	  }
-	  tmpobj.nextStopID = stopID;
-	  return tmpobj;
-	};
-
-
-	NetworkHandler.prototype.getHSLTripData = function(trip) {
-	  var queryStr = `{
-	      fuzzyTrip(route: "HSL:${trip.line}", direction: ${trip.dir}, date: "${trip.getDate()}", time: ${trip.startTimeInSecs()})
-	        {
-	          gtfsId
-	          tripHeadsign
-	          stops
-	          {
-	            code
-	            gtfsId
-	            name
-	            lat
-	            lon
-	          }
-	          route
-	          {
-	            longName
-	          }
-	          geometry
-	        }
-	    }`;
-	  return new Promise(function (resolve, reject) {
-	    var req = new XMLHttpRequest();
-	    req.open("POST", HSL_API, true);
-	    req.setRequestHeader("Content-type", "application/graphql");
-	    req.onload =  function() {
-	      if (req.status === 200 && req.responseText) {
-	        // If successful, resolve the promise by passing back the request response
-	        var newTrip = JSON.parse(req.responseText).data.fuzzyTrip;
-	        if (newTrip === null) {
-	          reject(Error("Received no data for current trip"));
-	        }
-	        trip.copyProps(newTrip);
-	        resolve(trip);
-	      } else {
-	        // If it fails, reject the promise with a error message
-	        reject(Error('Connection to HSL API failed; error code: ' + req.statusText));
-	      }
-	    };
-	    req.onerror = function() {
-	      // Also deal with the case when the entire request fails to begin with
-	      // This is probably a network error, so reject the promise with an appropriate message
-	      reject(Error('There was a network error.'));
-	    };
-	    req.send(queryStr);
-	  });
-	};
-
-	NetworkHandler.prototype.startListeningToMQTT = function(trip, func) {
-	  debug("Subscribing to mqtt channel");
-	  var mqttClient = Mqtt.connect("ws://epsilon.fixme.fi:9001");
-	  // Subscribe to the trip's MQTT channel
-	  mqttClient.subscribe('stoprequests/' + trip.gtfsId);
-	  // React to MQTT messages
-	  mqttClient.on("message", function (topic, payload) {
-	    debug("MQTT: '" + [topic, payload].join(": ") + "'");
-	    //UI.updateCounts(JSON.parse(payload).stop_ids, trip);
-	    func(JSON.parse(payload).stop_ids, trip);
-	  });
-	  //debug('Connected to MQTT channel "stoprequests/' + trip.gtfsId);
-	  return trip;
-	};
-
-
-	NetworkHandler.prototype.postDriverButton = function() {
-	  var xhttp = new XMLHttpRequest();
-	  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
-	  // Send the last stop's id and the trip's id to backend
-	  var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex-1].gtfsId + '"}';
-	  xhttp.send(msg);
-	  debug("Sent message to backend: " + msg);
-	};
-
-	module.exports = new NetworkHandler();
->>>>>>> aa6c22fd6518f5820f4c70e56d44d8bc0244bf6e
-
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
@@ -1330,7 +1112,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict'
@@ -1472,193 +1254,7 @@
 	module.exports.connect = connect
 	module.exports.MqttClient = MqttClient
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	// shim for using process in browser
-	var process = module.exports = {};
-
-	// cached from whatever global is present so that test runners that stub it
-	// don't break things.  But we need to wrap it in a try catch in case it is
-	// wrapped in strict mode code which doesn't define any globals.  It's inside a
-	// function because try/catches deoptimize in certain engines.
-
-	var cachedSetTimeout;
-	var cachedClearTimeout;
-
-	function defaultSetTimout() {
-	    throw new Error('setTimeout has not been defined');
-	}
-	function defaultClearTimeout () {
-	    throw new Error('clearTimeout has not been defined');
-	}
-	(function () {
-	    try {
-	        if (typeof setTimeout === 'function') {
-	            cachedSetTimeout = setTimeout;
-	        } else {
-	            cachedSetTimeout = defaultSetTimout;
-	        }
-	    } catch (e) {
-	        cachedSetTimeout = defaultSetTimout;
-	    }
-	    try {
-	        if (typeof clearTimeout === 'function') {
-	            cachedClearTimeout = clearTimeout;
-	        } else {
-	            cachedClearTimeout = defaultClearTimeout;
-	        }
-	    } catch (e) {
-	        cachedClearTimeout = defaultClearTimeout;
-	    }
-	} ())
-	function runTimeout(fun) {
-	    if (cachedSetTimeout === setTimeout) {
-	        //normal enviroments in sane situations
-	        return setTimeout(fun, 0);
-	    }
-	    // if setTimeout wasn't available but was latter defined
-	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-	        cachedSetTimeout = setTimeout;
-	        return setTimeout(fun, 0);
-	    }
-	    try {
-	        // when when somebody has screwed with setTimeout but no I.E. maddness
-	        return cachedSetTimeout(fun, 0);
-	    } catch(e){
-	        try {
-	            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-	            return cachedSetTimeout.call(null, fun, 0);
-	        } catch(e){
-	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-	            return cachedSetTimeout.call(this, fun, 0);
-	        }
-	    }
-
-
-	}
-	function runClearTimeout(marker) {
-	    if (cachedClearTimeout === clearTimeout) {
-	        //normal enviroments in sane situations
-	        return clearTimeout(marker);
-	    }
-	    // if clearTimeout wasn't available but was latter defined
-	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-	        cachedClearTimeout = clearTimeout;
-	        return clearTimeout(marker);
-	    }
-	    try {
-	        // when when somebody has screwed with setTimeout but no I.E. maddness
-	        return cachedClearTimeout(marker);
-	    } catch (e){
-	        try {
-	            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-	            return cachedClearTimeout.call(null, marker);
-	        } catch (e){
-	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-	            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-	            return cachedClearTimeout.call(this, marker);
-	        }
-	    }
-
-
-
-	}
-	var queue = [];
-	var draining = false;
-	var currentQueue;
-	var queueIndex = -1;
-
-	function cleanUpNextTick() {
-	    if (!draining || !currentQueue) {
-	        return;
-	    }
-	    draining = false;
-	    if (currentQueue.length) {
-	        queue = currentQueue.concat(queue);
-	    } else {
-	        queueIndex = -1;
-	    }
-	    if (queue.length) {
-	        drainQueue();
-	    }
-	}
-
-	function drainQueue() {
-	    if (draining) {
-	        return;
-	    }
-	    var timeout = runTimeout(cleanUpNextTick);
-	    draining = true;
-
-	    var len = queue.length;
-	    while(len) {
-	        currentQueue = queue;
-	        queue = [];
-	        while (++queueIndex < len) {
-	            if (currentQueue) {
-	                currentQueue[queueIndex].run();
-	            }
-	        }
-	        queueIndex = -1;
-	        len = queue.length;
-	    }
-	    currentQueue = null;
-	    draining = false;
-	    runClearTimeout(timeout);
-	}
-
-	process.nextTick = function (fun) {
-	    var args = new Array(arguments.length - 1);
-	    if (arguments.length > 1) {
-	        for (var i = 1; i < arguments.length; i++) {
-	            args[i - 1] = arguments[i];
-	        }
-	    }
-	    queue.push(new Item(fun, args));
-	    if (queue.length === 1 && !draining) {
-	        runTimeout(drainQueue);
-	    }
-	};
-
-	// v8 likes predictible objects
-	function Item(fun, array) {
-	    this.fun = fun;
-	    this.array = array;
-	}
-	Item.prototype.run = function () {
-	    this.fun.apply(null, this.array);
-	};
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	process.version = ''; // empty string to avoid regexp issues
-	process.versions = {};
-
-	function noop() {}
-
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-	process.umask = function() { return 0; };
-
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 8 */
@@ -2600,7 +2196,7 @@
 
 	module.exports = MqttClient
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(1)))
 
 /***/ },
 /* 9 */
@@ -3024,7 +2620,7 @@
 
 	module.exports = Store
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 11 */
@@ -3047,7 +2643,7 @@
 	  module.exports = Stream;
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 12 */
@@ -3226,7 +2822,7 @@
 	  module.exports = __webpack_require__(12);
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 15 */
@@ -4184,7 +3780,7 @@
 	  return -1;
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 16 */
@@ -6426,7 +6022,7 @@
 	  }
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 24 */
@@ -6910,7 +6506,7 @@
 	  state.ended = true;
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 25 */
@@ -8375,7 +7971,7 @@
 	  }
 	  return -1;
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 33 */
@@ -8425,7 +8021,7 @@
 	  }
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 34 */
@@ -9256,13 +8852,13 @@
 	    }
 	  };
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), __webpack_require__(40).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(40).setImmediate))
 
 /***/ },
 /* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(7).nextTick;
+	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(1).nextTick;
 	var apply = Function.prototype.apply;
 	var slice = Array.prototype.slice;
 	var immediateIds = {};
@@ -11426,7 +11022,7 @@
 	  }
 	  return -1;
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 54 */
@@ -11954,7 +11550,7 @@
 	    }
 	  };
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), __webpack_require__(40).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(40).setImmediate))
 
 /***/ },
 /* 56 */
@@ -12547,7 +12143,7 @@
 	  return Object.prototype.hasOwnProperty.call(obj, prop);
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(1)))
 
 /***/ },
 /* 57 */
@@ -15165,7 +14761,7 @@
 	  module.exports = buildBuilderBrowser
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 80 */
@@ -15289,7 +14885,7 @@
 	  return stream
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), (function() { return this; }()), __webpack_require__(17).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), (function() { return this; }()), __webpack_require__(17).Buffer))
 
 /***/ },
 /* 81 */
@@ -15392,7 +14988,7 @@
 	  return t2
 	})
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 82 */
@@ -16579,7 +16175,7 @@
 	  }
 	  return -1;
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ },
 /* 87 */
@@ -17107,7 +16703,7 @@
 	    }
 	  };
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), __webpack_require__(40).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(40).setImmediate))
 
 /***/ },
 /* 89 */
@@ -17341,7 +16937,7 @@
 
 	module.exports = Duplexify
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(17).Buffer, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(17).Buffer, __webpack_require__(1)))
 
 /***/ },
 /* 90 */

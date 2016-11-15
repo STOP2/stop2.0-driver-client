@@ -24,7 +24,7 @@ NetworkHandler.prototype.getCurrentVehicleData = function (trip) {
 };
 
 NetworkHandler.prototype.getHSLRealTimeAPIData = function(vehicleID) {
-  var url = RT_API_URL + (vehicleID? vehicleID + '/': '');
+  var url = global.RT_API_URL + (vehicleID? vehicleID + '/': '');
   return new Promise(function (resolve, reject) {
     var req = new XMLHttpRequest();
     req.open('GET', url, true);
@@ -149,7 +149,7 @@ NetworkHandler.prototype.getHSLTripData = function(trip) {
     }`;
   return new Promise(function (resolve, reject) {
     var req = new XMLHttpRequest();
-    req.open("POST", HSL_API, true);
+    req.open("POST", global.HSL_API, true);
     req.setRequestHeader("Content-type", "application/graphql");
     req.onload =  function() {
       if (req.status === 200 && req.responseText) {
@@ -194,7 +194,7 @@ NetworkHandler.prototype.startListeningToMQTT = function(trip, func) {
 
 NetworkHandler.prototype.postDriverButton = function() {
   var xhttp = new XMLHttpRequest();
-  xhttp.open("POST", STOP_API + "/stoprequests/report", true);
+  xhttp.open("POST", global.STOP_API + "/stoprequests/report", true);
   // Send the last stop's id and the trip's id to backend
   var msg = '{"trip_id": "' + currentTrip.gtfsId + '", "stop_id": "' + currentTrip.stops[currentTrip.stopIndex-1].gtfsId + '"}';
   xhttp.send(msg);

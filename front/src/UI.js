@@ -15,23 +15,25 @@ UI.prototype.createInitialUI = function() {
   UI.prototype.initErrors();
   document.querySelector(".content").innerHTML =
         `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
-  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.updateBusList);
 };
 
-UI.prototype.updateBusList = function(trips) {
+UI.prototype.updateBusList = function() {
   var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
-  var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
-  var ul = document.createElement('ul');
-  for (var t of trips) {
-    var li = document.createElement('li');
-    var sp = document.createElement('span');
-    sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
-    sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
-    sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
-    li.appendChild(sp);
-    ul.appendChild(li);
-  }
-  document.querySelector(".content").appendChild(ul);
+  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
+    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
+    var ul = document.createElement('ul');
+    for (var t of trips) {
+      var li = document.createElement('li');
+      var sp = document.createElement('span');
+      sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
+      sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
+      sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
+      li.appendChild(sp);
+      ul.appendChild(li);
+    }
+    document.querySelector(".content").appendChild(ul);
+  });
 };
 
 UI.prototype.initErrors = function() {
@@ -57,7 +59,7 @@ UI.prototype.initMainView = function(trip) {
   NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
   UI.prototype.setupHeader(trip);
   UI.prototype.renderStops(trip);
-  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
+  setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
     .catch(function (e) {
       debug.error(e.message);
       if (e.message.startsWith("No data")) {
@@ -67,7 +69,7 @@ UI.prototype.initMainView = function(trip) {
       } else if (e.message.startsWith("There was")) {
         UI.prototype.showError("network-error");
       }
-    }) }, window.UPDATE_INTERVAL);
+    }) }, global.UPDATE_INTERVAL);
 };
 
 UI.prototype.createUI = function() {
@@ -226,6 +228,4 @@ UI.prototype.updateCounts = function(payload, trip) {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = new UI();
-}
+module.exports = new UI();

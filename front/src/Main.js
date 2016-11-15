@@ -5,27 +5,37 @@ var NwH = require('./NetworkHandler');
 var Logger = require('./Logger');
 
 // Global constants
-window.STOP_API = "http://stop20.herokuapp.com";
-window.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
-window.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
-window.VISIBLE_FUTURE_STOPS = 10;
-window.DEBUG_MODE = true;
-window.UPDATE_INTERVAL = 2000; // milliseconds
-window.RUNNING_IN_NODE = typeof module !== 'undefined' && module.exports;
+if (typeof window !== 'undefined') {
+  global = window;
+}
+global.STOP_API = "http://stop20.herokuapp.com";
+global.RT_API_URL = "http://dev.hsl.fi/hfp/journey/bus/";
+global.HSL_API = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
+global.VISIBLE_FUTURE_STOPS = 10;
+global.DEBUG_MODE = true;
+global.UPDATE_INTERVAL = 2000; // milliseconds
+
+if (typeof window === 'undefined') {
+  global.RUNNING_IN_NODE = true;
+} else {
+  global.RUNNING_IN_NODE = false;
+}
+
+console.log(global);
+console.log(global.RUNNING_IN_NODE);
 
 // Initialization
 if (!RUNNING_IN_NODE) {
   UI.createInitialUI();
 }
 
-NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
-  if (!RUNNING_IN_NODE) {
-    UI.updateBusList();
-  } else {
+if (RUNNING_IN_NODE) {
+  console.log("Node detected, running Node version.");
+  NwH.getActiveTripsByRouteNum(process.argv[2]).then((trips) => {
     NwH.startListeningToMQTT(trip, null);
-    window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)() };
-  }
-});
+    setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip) });
+  });
+}
 
 Logger.init();
 
