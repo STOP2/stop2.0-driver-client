@@ -18,22 +18,20 @@ UI.prototype.createInitialUI = function() {
   document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
 };
 
-UI.prototype.initBusList = function() {
+UI.prototype.updateBusList = function(trips) {
   var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
-  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
-    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
-    var ul = document.createElement('ul');
-    for (var t of trips) {
-      var li = document.createElement('li');
-      var sp = document.createElement('span');
-      sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
-      sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
-      sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
-      li.appendChild(sp);
-      ul.appendChild(li);
-    }
-    document.querySelector(".content").appendChild(ul);
-  });
+  var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
+  var ul = document.createElement('ul');
+  for (var t of trips) {
+    var li = document.createElement('li');
+    var sp = document.createElement('span');
+    sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
+    sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
+    sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
+    li.appendChild(sp);
+    ul.appendChild(li);
+  }
+  document.querySelector(".content").appendChild(ul);
 };
 
 UI.prototype.initErrors = function() {
@@ -228,4 +226,6 @@ UI.prototype.updateCounts = function(payload, trip) {
   }
 };
 
-module.exports = new UI();
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = new UI();
+}
