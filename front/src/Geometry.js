@@ -7,15 +7,21 @@ var Geometry = function() {};
  * Finds and returns the index of current position in the
  * route geometry graph contained in trip.
  * @param trip - Object containing all data pertaining to a bus trip
- * @param currentPos - The current/previous location as GPS coordinates
+ * @param currentPos - The current location as GPS coordinates ([long, lat])
  * @returns {number} - The index corresponding to the current position
  */
 Geometry.prototype.positionOnRoute = function(trip, currentPos) {
   var geom = trip.geometry;
+  var stops = trip.stops;
 
   for (var i = 0; i < geom.length - 1; i++) {
-    if (this.isBetweenPoints(geom[i], geom[i + 1], currentPos)) {
+    if (this.isBetweenPoints(geom[i], geom[i + 1], currentPos)||
+        this.withinRadius(geom[i], currentPos)) {
       return i;
+    } else if (i === 0 && this.withinRadius(geom[0], currentPos)) {
+      return 0;
+    } else if (this.withinRadius([stops[stops.length - 1].lon, stops[stops.length - 1].lat], currentPos)) {
+      return geom.length - 1;
     }
   }
   return -1;
@@ -23,9 +29,9 @@ Geometry.prototype.positionOnRoute = function(trip, currentPos) {
 
 /**
  * Finds out whether location is between point1 and point2
- * @param point1 - An array representing the GPS location of a point
- * @param point2 - An array representing the GPS location of a point
- * @param location - An array representing the GPS location of a poin
+ * @param point1 - An array representing the GPS location of a point [long, lat]
+ * @param point2 - An array representing the GPS location of a point [long, lat]
+ * @param location - An array representing the GPS location of a poin [long, lat]
  * @returns {boolean} true if location is between point1 and point2
  */
 Geometry.prototype.isBetweenPoints = function (point1, point2, location) {
@@ -43,10 +49,12 @@ Geometry.prototype.isBetweenPoints = function (point1, point2, location) {
  * Finds out whether p1 is within a certain distance (DEVIATION) from p2
  * @param p1 - GPS coordinates having form [longitude, latitude]
  * @param p2 - GPS coordinates ([longitude, latitude])
+ * @param radius - The radius within which point p1 is from p2 (or vice versa)
  * @returns {boolean} - true if points are within DEVIATION, false otherwise
  */
-Geometry.prototype.areCloseEnough = function (p1, p2) {
-  return this.norm(this.locatedVector(p1, p2)) < DEVIATION;
+Geometry.prototype.withinRadius = function (p1, p2, radius) {
+  var num = radius? radius: DEVIATION;
+  return this.norm(this.locatedVector(p1, p2)) < num;
 };
 
 /**
@@ -71,8 +79,8 @@ Geometry.prototype.nextStopIndex = function(trip) {
     for (var j = trip.stopIndex; j < stoplist.length; j++) {
       var stopLoc = [stoplist[j].lon, stoplist[j].lat];
       if (this.isBetweenPoints(geom[i], geom[i+1], stopLoc) ||
-          this.areCloseEnough(geom[i], stopLoc) ||
-          this.areCloseEnough(geom[i+1], stopLoc)) {
+          this.withinRadius(geom[i], stopLoc) ||
+          this.withinRadius(geom[i+1], stopLoc)) {
         return j;
       }
     }

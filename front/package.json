@@ -25,6 +25,6 @@
     "webpack": "^1.13.2"
   },
   "dependencies": {
-    "mqtt": "^2.0.0"
+    "mqtt": "^2.1.1"
   }
 }

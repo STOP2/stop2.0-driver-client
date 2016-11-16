@@ -19,7 +19,7 @@ Logger.prototype.init = function() {
       global.debug = function () {}
    }
   } else {
-    if (DEBUG_MODE) {
+    if (window.DEBUG_MODE) {
       window.debug = console.log.bind(window.console);
       debug.warn = console.warn.bind(window.console);
       debug.error = console.error.bind(window.console);

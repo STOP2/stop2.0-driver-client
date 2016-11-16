@@ -8,19 +8,68 @@ The UI class renders the user interface
 
 var UI = function(){};
 
+var Trip = require('./Trip');
+var NwH = require('./NetworkHandler');
+
 UI.prototype.createInitialUI = function() {
+  UI.prototype.initErrors();
   document.querySelector(".content").innerHTML =
-        `Ajoneuvon numero (esim. 11262): <input type="text" id="vehicle-name"></input> <button id="ok-button">OK</button>`;
-  document.querySelector("#ok-button").addEventListener("click", UI.prototype.init)
+        `Reitin numero (esim. 55): <input type="text" id="route-number"></input> <button id="ok-button">OK</button>`;
+  document.querySelector("#ok-button").addEventListener("click", UI.prototype.initBusList);
+};
+
+UI.prototype.initBusList = function() {
+  var vehicleId = Trip.hslExtToInt(document.getElementById('route-number').value);
+  NwH.getActiveTripsByRouteNum(vehicleId).then((trips) => {
+    var content = document.querySelector(".content").innerHTML = "<h2>Valitse lähtö</h2>";
+    var ul = document.createElement('ul');
+    for (var t of trips) {
+      var li = document.createElement('li');
+      var sp = document.createElement('span');
+      sp.setAttribute('class', 'bus-selection-button vehicle-' + t.veh);
+      sp.textContent = t.tripHeadsign + ' ' + t.startTimeAsString();
+      sp.addEventListener('click', UI.prototype.initMainView.bind(this, t));
+      li.appendChild(sp);
+      ul.appendChild(li);
+    }
+    document.querySelector(".content").appendChild(ul);
+  });
+};
+
+UI.prototype.initErrors = function() {
+  document.querySelector(".errors").innerHTML = `
+    <div class="error" id="api-data-failed">HSL:n tietoja ei saatu ladattua API:n virheen takia. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="api-failed">HSL:n API:in ei saatu yhteyttä. Yritetään uudestaan kunnes yhteys toimii.</div>
+    <div class="error" id="connection-error">Verkkohäiriö. Yritetään uudestaan kunnes yhteys toimii.</div>
+  `;
+};
+
+UI.prototype.showError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "inline";
+};
+
+UI.prototype.hideError = function(errorName) {
+  document.querySelector("#" + errorName).style.display = "none";
 };
 
 // Initialization function
-UI.prototype.init = function() {
-  debug("*** STOP 2.0 - STARTING INITIALIZATION***")
-  var vehicleId = document.getElementById('vehicle-name').value;
+UI.prototype.initMainView = function(trip) {
+  debug("*** STOP 2.0 - STARTING INITIALIZATION***");
   UI.prototype.createUI();
-  var nh = require('./NetworkHandler');
-  nh.init(vehicleId).then(UI.prototype.setupHeader).then(UI.prototype.renderStops);
+  NwH.startListeningToMQTT(trip, UI.prototype.updateCounts);
+  UI.prototype.setupHeader(trip);
+  UI.prototype.renderStops(trip);
+  window.setInterval(() => { NwH.getCurrentVehicleData.bind(NwH, trip)().then(UI.prototype.updateStops)
+    .catch(function (e) {
+      debug.error(e.message);
+      if (e.message.startsWith("No data")) {
+        UI.prototype.showError("api-data-failed");
+      } else if (e.message.startsWith("Connection to HSL")) {
+        UI.prototype.showError("api-failed");
+      } else if (e.message.startsWith("There was")) {
+        UI.prototype.showError("network-error");
+      }
+    }) }, window.UPDATE_INTERVAL);
 };
 
 UI.prototype.createUI = function() {
@@ -32,7 +81,7 @@ UI.prototype.createUI = function() {
         <button class="driver-button">Pysäkiltä ei noussut ketään</button>`;
   // Add a listener to the driver button
   document.querySelector(".driver-button").addEventListener("click", function() {
-    require('./NetworkHandler').postDriverButton();
+    NwH.postDriverButton();
   });
 };
 
@@ -40,58 +89,22 @@ UI.prototype.createUI = function() {
 UI.prototype.setupHeader = function(trip) {
   if (trip) {
     UI.prototype.logInfo(trip); // Selvitä miksei toimi thisillä
-    var tripName = UI.prototype.parseHeadsign(trip);
-    var busNumber = UI.prototype.parseBusNumber(trip);
-    var startTime = UI.prototype.parseStartTime(trip);
+    debug(trip);
+    trip.initPosition();
     // Set the header
-    document.querySelector("h2").innerHTML = tripName + " (" + busNumber + "), lähtö klo " + startTime;
+    document.querySelector("h2").innerHTML = trip.getLongName() +
+      " (" + trip.routeNumber() + "), lähtö klo " + trip.startTimeAsString();
   }
-  return trip;
-};
-
-// Parse bus start time
-UI.prototype.parseStartTime = function(trip) {
-  var t = trip.start / 60;
-  var hours = Math.floor(t / 60);
-  if (hours < 10) {
-    hours = "0" + hours;
-  }
-  var minutes = (t % 60);
-  if (minutes < 10) {
-    minutes = "0" + minutes;
-  }
-  return hours + ":" + minutes
-};
-
-// Parse the bus number
-UI.prototype.parseBusNumber = function(trip) {
-  return parseInt(trip.line.split(":")[1].substring(1));
-};
-
-// Parse the bus's start and end locations and add them together
-UI.prototype.parseHeadsign = function(trip) {
-  var tripLeft = trip.route.longName.split(" - ")[0];
-  var tripRight = trip.route.longName.split(" - ")[1];
-  if (trip.tripHeadsign == tripLeft) {
-    tripLeft = tripRight;
-    tripRight = trip.tripHeadsign;
-  }
-  return tripLeft + " - " + tripRight;
 };
 
 // General logging
 UI.prototype.logInfo = function(trip) {
+  debug("Bus ID: " + trip.veh);
   debug("Bus tripId: " + trip.gtfsId);
   debug("Bus direction: " + trip.tripHeadsign);
   debug("Stops:");
   debug(trip.stops);
 };
-
-function updateUI() {
-  var nh = require('./NetworkHandler');
-  //nh.getNextStop(nh.getCurrentTrip());
-  nh.getCurrentVehicleData().then(UI.prototype.updateStops);
-}
 
 // Create the stop elements
 UI.prototype.renderStops = function(trip) {
@@ -105,14 +118,16 @@ UI.prototype.renderStops = function(trip) {
     s.node = item;
   }
   debug("*** STOP 2.0 - FINISHED INITIALIZING ***")
-  require('./NetworkHandler').getNextStop(trip);
   UI.prototype.updateStops(trip);
-  window.setInterval(updateUI, window.UPDATE_INTERVAL);
 };
 
 // Update the stop element highlights
 UI.prototype.updateStops = function(trip) {
-  debug("### coordinates: " + trip.lat + "," + trip.long);
+  UI.prototype.hideError("api-data-failed");
+  UI.prototype.hideError("api-failed");
+  UI.prototype.hideError("connection-error");
+  debug("### coordinates: " + trip.lat + "," + trip.long + ", next stop: " + trip.nextStopID);
+  UI.prototype.resetIfLastStop(trip);
   // First hide the stops that are not supposed to be shown yet
   for (var s of trip.stops) {
     UI.prototype.hideOrShowNode(s, trip);
@@ -126,6 +141,12 @@ UI.prototype.updateStops = function(trip) {
     else if (trip.stopIndex == trip.stops.indexOf(s) + 1) {
       UI.prototype.highlightPreviousStop(s);
     }
+  }
+};
+
+UI.prototype.resetIfLastStop = function (trip) {
+  if (trip.stopIndex == trip.stops.length - 1) {
+    window.location.reload();
   }
 };
 
@@ -196,23 +217,12 @@ UI.prototype.updateCounts = function(payload, trip) {
         s.count = p.passengers;
         // If the count changed, play the highlight effect and add the correct classes
         if (origCount != s.count) {
-          s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
-          for (var n of s.node.childNodes) {
-            if (n.classList.contains("number")) {
-              if (s.count != 0) {
-                if (!n.classList.contains("active")) {
-                  n.classList.add("active");
-                }
-              } else {
-                if (n.classList.contains("active")) {
-                  n.classList.remove("active");
-                }
-              }
-              break;
-            }
+          if (s.count != 0) {
+            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number active'>" + s.count + "</span></span>";
+          } else {
+            s.node.innerHTML = "<span class='current-stop-marker'></span><span class='run-animation'>" + s.name + " (" + s.code + ") <span class='number'>" + s.count + "</span></span>";
           }
         }
-        return;
       }
     }
   }
